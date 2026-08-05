@@ -9,7 +9,7 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=5;
 const APP_VERSION='2.0.0';
-const APP_BUILD='003';
+const APP_BUILD='004';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
@@ -112,7 +112,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 003'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 004'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -274,6 +274,9 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden') emergencySyncWrite('خروج از برنامه');
 });
 window.addEventListener('pagehide',()=>emergencySyncWrite('بسته شدن صفحه'));
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW registration failed',err));
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.map(r=>r.unregister()))).catch(()=>{});
+  if('caches' in window) caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
+}
 }
 initApp().catch(err=>{console.error(err);alert('راه‌اندازی دیتابیس با خطا روبه‌رو شد. صفحه را دوباره باز کن.');});
