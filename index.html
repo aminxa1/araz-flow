@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f2747" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Araz Flow" />
+    <title>Araz Flow v1.2.1 Hosted</title>
+  <style>
+    :root{--navy:#0f2747;--blue:#174f78;--teal:#0d6b6f;--gold:#d89b27;--bg:#f5f1e9;--card:#fffdf8;--muted:#6b7280;--line:#d8dee8;--red:#c73d3d;--green:#2f7d4b;--purple:#6d4a8d;--shadow:#0f274716}
+    *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:#18202a}
+    button,input,select,textarea{font:inherit}.app{min-height:100vh}.topbar{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,var(--navy),#16395f);color:#fff;padding:14px 18px calc(14px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 14px #0002}
+    .brand{font-weight:800;font-size:20px}.sub{font-size:12px;opacity:.8}.version{font-size:11px;opacity:.75;margin-top:3px}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid #ffffff44;background:#ffffff14;color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer}.tab.active{background:#fff;color:var(--navy)}
+    main{max-width:1400px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 20px var(--shadow);overflow:hidden}.card h2{margin:0;padding:14px 16px;background:#f0f5fa;color:var(--navy);font-size:17px;border-bottom:1px solid var(--line)}.content{padding:14px}
+    .hero{background:linear-gradient(135deg,var(--navy),var(--teal));color:#fff;border-radius:16px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;gap:12px;align-items:center}.hero strong{font-size:19px}.hero small{display:block;opacity:.82;margin-top:4px}.count{font-size:30px;font-weight:800}
+    .btn{border:none;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--navy);color:#fff}.btn.secondary{background:#e8edf4;color:var(--navy)}.btn.teal{background:var(--teal)}.btn.red{background:var(--red)}.btn.gold{background:var(--gold);color:#222}.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}.field label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}textarea{min-height:76px;resize:vertical}
+    .list{display:flex;flex-direction:column;gap:10px}.item{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}.item-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.title{font-weight:700}.meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.65}.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;background:#edf2f7;color:#334155;margin-left:4px}.A{background:#fde2e2;color:#a11}.B{background:#fff0c9;color:#8a5a00}.C{background:#dff4e6;color:#185b31}.actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}.iconbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;cursor:pointer}.iconbtn.primary{background:#eef6f2;border-color:#b9d8c5;color:#185b31}.iconbtn.danger{color:#a11}
+    .section{display:none}.section.active{display:block}.empty{text-align:center;color:var(--muted);padding:30px 10px}.brain-btn{width:100%;padding:15px;font-weight:800;font-size:17px;background:linear-gradient(135deg,#7a2d62,#45214d);color:#fff;border:0;border-radius:14px;cursor:pointer}.footer-note{font-size:12px;color:var(--muted);text-align:center;padding:16px}.progress{height:8px;background:#e8edf3;border-radius:99px;overflow:hidden;margin-top:8px}.progress>span{display:block;height:100%;background:var(--teal)}
+    .active-action{margin-top:9px;padding:10px;border:1px solid #b9d8c5;background:#eef6f2;border-radius:10px;font-size:13px}.active-action b{color:#185b31}.action-count{font-size:11px;color:var(--muted);margin-top:5px}.steps{display:flex;flex-direction:column;gap:8px;margin-top:10px}.step-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}.step-num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#e8edf4;color:var(--navy);font-size:12px;font-weight:700}.step-row.done .step-num{background:#dff4e6;color:#185b31}.step-row.done input{text-decoration:line-through;color:#777;background:#f8fafc}.step-tools{display:flex;gap:4px}.mini{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 7px;cursor:pointer}.add-step{margin-top:10px;display:flex;gap:7px}.add-step input{flex:1}
+    dialog{border:0;border-radius:16px;max-width:620px;width:94%;box-shadow:0 20px 60px #0004;padding:0}dialog::backdrop{background:#0007}.dialog-head{padding:14px 16px;background:var(--navy);color:#fff;font-weight:800}.dialog-body{padding:16px;max-height:72vh;overflow:auto}.dialog-actions{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.choice{display:grid;gap:10px}.choice button{width:100%;padding:13px;text-align:right}.notice{padding:12px;border-radius:10px;background:#fff7dc;border:1px solid #efd895;font-size:13px;margin-bottom:12px}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(40px);opacity:0;transition:.25s;background:#18202a;color:#fff;padding:10px 14px;border-radius:10px;z-index:50;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column;padding-top:calc(14px + env(safe-area-inset-top))}.tabs{width:100%;overflow:auto;flex-wrap:nowrap}.tab{white-space:nowrap}main{padding:10px}.hero{align-items:flex-start}.count{font-size:24px}.dialog-actions .btn{flex:1}.step-row{grid-template-columns:auto 1fr}.step-tools{grid-column:2;justify-content:flex-start}}
+    @media print{.topbar,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}main{max-width:none}.section{display:none!important}#today.section{display:block!important}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 1.2.1 Hosted</div></div>
+    <nav class="tabs no-print">
+      <button class="tab active" data-tab="today">امروز</button>
+      <button class="tab" data-tab="backlog">مخزن کارها</button>
+      <button class="tab" data-tab="incoming">ورودی‌ها</button>
+      <button class="tab" data-tab="parking">پارکینگ ذهن</button>
+      <button class="tab" data-tab="backup">پشتیبان‌گیری</button>
+    </nav>
+  </header>
+  <main>
+    <div class="notice no-print" style="margin-bottom:12px"><b>نسخه میزبانی‌شده:</b> پس از قرار گرفتن این فایل روی یک آدرس ثابت، نسخه‌های بعدی همین دیتابیس را نگه می‌دارند. بعد از ورود اطلاعات مهم، از تب پشتیبان‌گیری یک فایل خروجی بگیر.</div>
+    <section id="today" class="section active">
+      <div class="hero"><div><strong>پروژه فعال ≠ ذهن فعال</strong><small>پروژه‌ها می‌توانند همزمان جلو بروند، اما فقط چند موضوع حق دارند ذهن تو را اشغال کنند.</small></div><div><div class="count" id="activeCount">۰/۵</div><small>محور فعال امروز</small></div></div>
+      <div class="grid">
+        <div class="card"><h2>پروژه‌ها و محورهای فعال امروز</h2><div class="content"><div id="todayList" class="list"></div><div class="empty" id="todayEmpty">هنوز کاری از مخزن وارد امروز نشده است.</div></div></div>
+        <div class="card"><h2>کنترل توجه امروز</h2><div class="content">
+          <div class="field"><label>تمرکز اصلی امروز روی چیست؟</label><textarea id="focusText" placeholder="فقط یک جمله روشن..."></textarea></div>
+          <div style="height:12px"></div><button class="brain-btn" id="brainLock">مغزم قفل کرده</button>
+          <div style="height:12px"></div><button class="btn secondary" id="printToday">چاپ صفحه امروز</button>
+        </div></div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="card"><h2>مرور پایان روز</h2><div class="content"><div class="row">
+        <div class="field"><label>چه چیزی جلو رفت؟</label><textarea id="reviewProgress"></textarea></div>
+        <div class="field"><label>چه چیزی باید واگذار شود؟</label><textarea id="reviewDelegate"></textarea></div>
+        <div class="field"><label>برد کوچک امروز</label><textarea id="reviewWin"></textarea></div>
+      </div></div></div>
+    </section>
+
+    <section id="backlog" class="section">
+      <div class="grid"><div class="card"><h2>افزودن پروژه یا کار به مخزن</h2><div class="content">
+        <div class="field"><label>عنوان پروژه یا کار</label><input id="taskTitle" placeholder="مثلاً خرید دستگاه جدید" /></div>
+        <div class="row"><div class="field"><label>دسته‌بندی</label><select id="taskCategory"><option>فنی و تولید</option><option>مالی و اداری</option><option>بازرگانی و خرید</option><option>فروش و مشتریان</option><option>منابع انسانی</option><option>تعمیرات و نگهداری</option><option>ایده و توسعه</option><option>سایر</option></select></div>
+        <div class="field"><label>اولویت</label><select id="taskPriority"><option value="A">A - بحرانی/مهم</option><option value="B" selected>B - مهم</option><option value="C">C - عادی</option></select></div>
+        <div class="field"><label>مسئول</label><input id="taskOwner" placeholder="خودم یا نام شخص" /></div></div>
+        <div class="row"><div class="field"><label>مهلت</label><input id="taskDue" type="date" /></div></div>
+        <div class="field"><label>اقدامات مرحله‌ای</label><div id="newActions" class="steps"></div><div class="add-step"><input id="newActionText" placeholder="مثلاً دریافت مشخصات فنی"/><button class="btn secondary" id="addNewAction" type="button">افزودن اقدام</button></div><div class="meta">می‌توانی چند اقدام ثبت کنی و بعداً هم اقدامات جدید اضافه کنی.</div></div>
+        <div class="field"><label>یادداشت</label><textarea id="taskNote"></textarea></div>
+        <button class="btn teal" id="addTask">ثبت در مخزن</button>
+      </div></div>
+      <div class="card"><h2>فیلتر مخزن</h2><div class="content"><div class="field"><label>جست‌وجو</label><input id="searchTask" placeholder="عنوان، مسئول، دسته‌بندی، اقدام..." /></div><div class="field"><label>وضعیت</label><select id="filterStatus"><option value="all">همه</option><option value="backlog">مخزن</option><option value="today">امروز</option><option value="waiting">در انتظار</option><option value="done">انجام شده</option></select></div></div></div></div>
+      <div style="height:16px"></div><div class="card"><h2>همه پروژه‌ها و کارها</h2><div class="content"><div id="backlogList" class="list"></div><div class="empty" id="backlogEmpty">مخزن خالی است. برای یک مدیرعامل، این تقریباً رخدادی افسانه‌ای است.</div></div></div>
+    </section>
+
+    <section id="incoming" class="section">
+      <div class="grid"><div class="card"><h2>ثبت مراجعه یا ورودی جدید</h2><div class="content">
+        <div class="row"><div class="field"><label>نام شخص/شرکت</label><input id="inName" /></div><div class="field"><label>موضوع</label><input id="inTopic" /></div></div>
+        <div class="row"><div class="field"><label>فوریت</label><select id="inPriority"><option value="A">A - فوری امروز</option><option value="B" selected>B - در اولین فرصت</option><option value="C">C - قابل برنامه‌ریزی</option></select></div><div class="field"><label>تصمیم/اقدام</label><input id="inDecision" /></div></div>
+        <div class="row"><div class="field"><label>ارجاع به</label><input id="inDelegate" /></div><div class="field"><label>تاریخ پیگیری</label><input id="inFollow" type="date" /></div></div>
+        <button class="btn teal" id="addIncoming">ثبت ورودی</button>
+      </div></div><div class="card"><h2>قانون ورودی‌ها</h2><div class="content"><p>هر مراجعه باید به یکی از این سه خروجی برسد:</p><p><b>تصمیم شد</b>، <b>ارجاع شد</b>، یا <b>برای پیگیری زمان گرفت</b>.</p><p class="meta">نباید به شکل «بعداً یادم بماند» در مغز ذخیره شود. مغزت هارددیسک شرکتی نیست، هرچند همه با آن چنین رفتاری دارند.</p></div></div></div>
+      <div style="height:16px"></div><div class="card"><h2>فهرست ورودی‌ها</h2><div class="content"><div id="incomingList" class="list"></div><div class="empty" id="incomingEmpty">ورودی ثبت نشده است.</div></div></div>
+    </section>
+
+    <section id="parking" class="section">
+      <div class="grid"><div class="card"><h2>پارک کردن فکر جدید</h2><div class="content"><div class="field"><label>ایده، وسوسه یا کار ناگهانی</label><textarea id="parkText" placeholder="این مورد فعلاً اجازه ندارد برنامه امروز را به‌هم بزند."></textarea></div><button class="btn teal" id="addParking">پارک کن</button></div></div><div class="card"><h2>قانون پارکینگ</h2><div class="content"><p>هر چیزی که در داشبورد امروز نیست، فعلاً فقط ثبت می‌شود.</p><p>بعداً می‌توان آن را حذف کرد، به مخزن انتقال داد یا برای بازبینی زمان تعیین کرد.</p></div></div></div>
+      <div style="height:16px"></div><div class="card"><h2>موارد پارک‌شده</h2><div class="content"><div id="parkingList" class="list"></div><div class="empty" id="parkingEmpty">پارکینگ خالی است.</div></div></div>
+    </section>
+    <div class="footer-note">اطلاعات این نسخه روی همین دستگاه ذخیره می‌شود.</div>
+
+    <section id="backup" class="section">
+      <div class="grid">
+        <div class="card"><h2>پشتیبان‌گیری از اطلاعات</h2><div class="content">
+          <div class="notice">این فایل شامل پروژه‌ها، اقدامات، ورودی‌ها، پارکینگ ذهن و یادداشت‌هاست. آن را در Files یا iCloud نگه دار.</div>
+          <div class="row">
+            <button class="btn teal" id="exportBackup">دریافت فایل پشتیبان</button>
+            <button class="btn secondary" id="shareBackup">اشتراک‌گذاری پشتیبان</button>
+          </div>
+          <div class="meta" id="backupInfo" style="margin-top:12px"></div>
+        </div></div>
+        <div class="card"><h2>بازیابی اطلاعات</h2><div class="content">
+          <div class="notice">بازیابی، اطلاعات فعلی را با محتوای فایل جایگزین می‌کند. برنامه قبل از جایگزینی، یک نسخه اضطراری داخلی می‌سازد.</div>
+          <input id="restoreFile" type="file" accept="application/json,.json" style="display:none" />
+          <button class="btn gold" id="chooseRestore">انتخاب فایل پشتیبان</button>
+          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۲</b></div>
+        </div></div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="card"><h2>وضعیت اطلاعات فعلی</h2><div class="content"><div id="dataStats" class="row"></div></div></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="brainDialog"><div class="dialog-head">حالت خروج از قفل ذهنی</div><div class="dialog-body">
+  <div class="field"><label>۱. الان دقیقاً چه چیزهایی ذهنت را اشغال کرده‌اند؟</label><textarea id="brainThings"></textarea></div>
+  <div class="field"><label>۲. کدام مورد بیشترین خطر یا اهمیت را دارد؟</label><input id="brainImportant" /></div>
+  <div class="field"><label>۳. کوچک‌ترین اقدام بعدی چیست؟</label><input id="brainNext" /></div>
+  <div id="singleStep" style="display:none;margin-top:14px;padding:14px;border-radius:12px;background:#eef6f2;font-size:18px;font-weight:800"></div>
+</div><div class="dialog-actions"><button class="btn secondary" id="closeBrain">بستن</button><button class="btn teal" id="showStep">فقط قدم بعدی را نشان بده</button></div></dialog>
+
+<dialog id="projectDialog"><div class="dialog-head" id="projectDialogTitle">جزئیات پروژه</div><div class="dialog-body">
+  <div class="field"><label>عنوان</label><input id="editTitle" /></div>
+  <div class="row"><div class="field"><label>دسته‌بندی</label><select id="editCategory"><option>فنی و تولید</option><option>مالی و اداری</option><option>بازرگانی و خرید</option><option>فروش و مشتریان</option><option>منابع انسانی</option><option>تعمیرات و نگهداری</option><option>ایده و توسعه</option><option>سایر</option></select></div><div class="field"><label>اولویت</label><select id="editPriority"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div></div>
+  <div class="row"><div class="field"><label>مسئول</label><input id="editOwner" /></div><div class="field"><label>مهلت</label><input id="editDue" type="date" /></div></div>
+  <div class="field"><label>اقدامات مرحله‌ای</label><div id="editActions" class="steps"></div><div class="add-step"><input id="editActionText" placeholder="اقدام جدید"/><button class="btn secondary" id="addEditAction" type="button">افزودن</button></div></div>
+  <div class="field"><label>یادداشت</label><textarea id="editNote"></textarea></div>
+</div><div class="dialog-actions"><button class="btn secondary" id="closeProject">انصراف</button><button class="btn teal" id="saveProject">ذخیره تغییرات</button></div></dialog>
+
+<dialog id="nextActionDialog"><div class="dialog-head">اقدام انجام شد</div><div class="dialog-body"><div id="nextActionContent"></div></div><div class="dialog-actions" id="nextActionButtons"></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const STORAGE_KEY='arazFlowDatabase';
+const BACKUP_KEY='arazFlowEmergencyBackups';
+const LEGACY_KEYS=['arazFlowV11','aminDashboardV1'];
+const DB_SCHEMA_VERSION=3;
+const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}};
+function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
+function loadState(){
+  let current=safeParse(localStorage.getItem(STORAGE_KEY));
+  if(current)return current;
+  for(const key of LEGACY_KEYS){
+    const legacy=safeParse(localStorage.getItem(key));
+    if(legacy){createEmergencyBackup(legacy,'مهاجرت از '+key);return legacy;}
+  }
+  return structuredClone(defaultState);
+}
+let state=loadState();
+let draftActions=[];let editingTaskId=null;let pendingCompleteTaskId=null;
+function normalize(){
+  state=state&&typeof state==='object'?state:structuredClone(defaultState);
+  state.tasks=(state.tasks||[]).map(t=>({id:t.id||uid(),created:t.created||new Date().toISOString(),updated:t.updated||t.created||new Date().toISOString(),status:t.status||'backlog',priority:t.priority||'B',category:t.category||'سایر',owner:t.owner||'',due:t.due||'',note:t.note||'',...t,actions:Array.isArray(t.actions)?t.actions.map(a=>({id:a.id||uid(),text:String(a.text||''),done:Boolean(a.done)})):(t.next?[{id:uid(),text:t.next,done:false}]:[])}));
+  state.incoming=Array.isArray(state.incoming)?state.incoming:[];
+  state.parking=Array.isArray(state.parking)?state.parking:[];
+  state.notes=state.notes&&typeof state.notes==='object'?state.notes:{};
+  state.meta=state.meta&&typeof state.meta==='object'?state.meta:{};
+  state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
+  state.schemaVersion=DB_SCHEMA_VERSION;
+  save();
+}
+function save(){state.schemaVersion=DB_SCHEMA_VERSION;state.meta=state.meta||{};state.meta.updatedAt=new Date().toISOString();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));updateBackupPanel();}
+function createEmergencyBackup(data,reason='پشتیبان خودکار'){
+  try{const items=safeParse(localStorage.getItem(BACKUP_KEY))||[];items.unshift({createdAt:new Date().toISOString(),reason,data});localStorage.setItem(BACKUP_KEY,JSON.stringify(items.slice(0,5)));}catch{}
+}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function now(){return new Date().toISOString()}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function activeAction(t){return (t.actions||[]).find(a=>!a.done)}
+function doneCount(t){return (t.actions||[]).filter(a=>a.done).length}
+function progressPct(t){return t.actions?.length?Math.round(doneCount(t)/t.actions.length*100):0}
+normalize();
+
+$$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active');render();});
+
+function renderDraftActions(){const box=$('#newActions');box.innerHTML=draftActions.map((a,i)=>`<div class="step-row"><span class="step-num">${i+1}</span><input value="${esc(a.text)}" oninput="updateDraftAction(${i},this.value)"><div class="step-tools"><button class="mini" onclick="moveDraft(${i},-1)">↑</button><button class="mini" onclick="moveDraft(${i},1)">↓</button><button class="mini" onclick="removeDraft(${i})">حذف</button></div></div>`).join('');}
+window.updateDraftAction=(i,v)=>{draftActions[i].text=v};window.removeDraft=i=>{draftActions.splice(i,1);renderDraftActions()};window.moveDraft=(i,d)=>{let j=i+d;if(j<0||j>=draftActions.length)return;[draftActions[i],draftActions[j]]=[draftActions[j],draftActions[i]];renderDraftActions()};
+$('#addNewAction').onclick=()=>{let v=$('#newActionText').value.trim();if(!v)return;draftActions.push({id:uid(),text:v,done:false});$('#newActionText').value='';renderDraftActions()};
+$('#newActionText').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addNewAction').click()}});
+
+$('#addTask').onclick=()=>{let title=$('#taskTitle').value.trim();if(!title)return alert('عنوان پروژه یا کار را بنویس.');let acts=draftActions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim()}));state.tasks.unshift({id:uid(),title,category:$('#taskCategory').value,priority:$('#taskPriority').value,owner:$('#taskOwner').value.trim(),due:$('#taskDue').value,note:$('#taskNote').value.trim(),actions:acts,status:'backlog',created:now(),updated:now()});['#taskTitle','#taskOwner','#taskDue','#taskNote'].forEach(x=>$(x).value='');draftActions=[];renderDraftActions();save();render();toast('در مخزن ثبت شد');};
+
+function taskCard(t){const a=activeAction(t),pct=progressPct(t),statusLabel={backlog:'مخزن',today:'امروز',waiting:'در انتظار',done:'انجام‌شده'}[t.status]||t.status;return `<div class="item"><div class="item-head"><div><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.category)} ${t.owner?'• مسئول: '+esc(t.owner):''} ${t.due?'• مهلت: '+esc(t.due):''} • وضعیت: ${statusLabel}</div></div><span class="badge ${t.priority}">${t.priority}</span></div>
+${a?`<div class="active-action"><b>اقدام فعال:</b> ${esc(a.text)}</div>`:`<div class="active-action"><b>${t.status==='done'?'پروژه تکمیل شده':'اقدام انجام‌نشده‌ای ثبت نشده'}</b></div>`}
+<div class="action-count">${doneCount(t)} اقدام انجام‌شده از ${t.actions.length}</div><div class="progress"><span style="width:${pct}%"></span></div>${t.note?`<div class="meta">${esc(t.note)}</div>`:''}
+<div class="actions">${t.status!=='today'&&t.status!=='done'?`<button class="iconbtn primary" onclick="moveToday('${t.id}')">ورود به امروز</button>`:''}${t.status==='today'&&a?`<button class="iconbtn primary" onclick="completeActive('${t.id}')">✓ انجام اقدام فعال</button>`:''}${t.status==='today'?`<button class="iconbtn" onclick="setStatus('${t.id}','waiting')">در انتظار</button>`:''}<button class="iconbtn" onclick="openProject('${t.id}')">جزئیات و اقدامات</button>${t.status!=='done'?`<button class="iconbtn" onclick="setStatus('${t.id}','done')">اتمام پروژه</button>`:''}<button class="iconbtn" onclick="setStatus('${t.id}','backlog')">بازگشت به مخزن</button><button class="iconbtn danger" onclick="delTask('${t.id}')">حذف</button></div></div>`}
+window.moveToday=id=>{let t=state.tasks.find(x=>x.id===id);if(!t)return;if(state.tasks.filter(x=>x.status==='today').length>=5)return alert('حداکثر پنج محور فعال. مغزت شعبه نامحدود ندارد.');if(!activeAction(t))return openProject(id);t.status='today';t.updated=now();save();render();toast('به امروز منتقل شد')};
+window.setStatus=(id,status)=>{let t=state.tasks.find(x=>x.id===id);if(t){t.status=status;t.updated=now()}save();render();};
+window.delTask=id=>{if(!confirm('این پروژه حذف شود؟'))return;state.tasks=state.tasks.filter(x=>x.id!==id);save();render();};
+
+window.completeActive=id=>{const t=state.tasks.find(x=>x.id===id),a=t&&activeAction(t);if(!t||!a)return;a.done=true;t.updated=now();pendingCompleteTaskId=id;save();showNextActionDialog(t);};
+function showNextActionDialog(t){const next=activeAction(t),content=$('#nextActionContent'),buttons=$('#nextActionButtons');if(next){content.innerHTML=`<div class="notice">اقدام انجام شد.</div><p>اقدام بعدی پروژه:</p><div class="active-action"><b>${esc(next.text)}</b></div><p class="meta">می‌خواهی همین پروژه امروز ادامه پیدا کند یا به مخزن برگردد؟</p>`;buttons.innerHTML=`<button class="btn secondary" onclick="sendCompletedToBacklog()">بازگشت به مخزن</button><button class="btn teal" onclick="keepNextToday()">ادامه همین پروژه امروز</button>`;}else{content.innerHTML=`<div class="notice">همه اقدامات ثبت‌شده انجام شدند.</div><p>وضعیت پروژه چیست؟</p>`;buttons.innerHTML=`<button class="btn secondary" onclick="sendCompletedToBacklog()">فعلاً به مخزن برگردد</button><button class="btn gold" onclick="addActionAfterFinish()">اقدام جدید اضافه می‌کنم</button><button class="btn teal" onclick="finishProjectNow()">پروژه تکمیل شد</button>`;}$('#nextActionDialog').showModal();render();}
+window.keepNextToday=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId);if(t){t.status='today';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی برای امروز فعال شد')};
+window.sendCompletedToBacklog=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId);if(t){t.status='backlog';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('پروژه به مخزن برگشت')};
+window.finishProjectNow=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId);if(t){t.status='done';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('پروژه تکمیل شد')};
+window.addActionAfterFinish=()=>{let id=pendingCompleteTaskId;$('#nextActionDialog').close();pendingCompleteTaskId=null;openProject(id);setTimeout(()=>$('#editActionText').focus(),100)};
+
+window.openProject=id=>{editingTaskId=id;const t=state.tasks.find(x=>x.id===id);if(!t)return;$('#projectDialogTitle').textContent='جزئیات پروژه';$('#editTitle').value=t.title;$('#editCategory').value=t.category;$('#editPriority').value=t.priority;$('#editOwner').value=t.owner||'';$('#editDue').value=t.due||'';$('#editNote').value=t.note||'';renderEditActions();$('#projectDialog').showModal();};
+function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><div class="step-tools"><button class="mini" onclick="toggleEditDone(${i})">${a.done?'بازگردانی':'انجام شد'}</button><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
+window.editActionTextChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].text=v};window.toggleEditDone=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].done=!t.actions[i].done;renderEditActions()};window.moveEditAction=(i,d)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let j=i+d;if(j<0||j>=t.actions.length)return;[t.actions[i],t.actions[j]]=[t.actions[j],t.actions[i]];renderEditActions()};window.removeEditAction=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.actions.splice(i,1);renderEditActions()};
+$('#addEditAction').onclick=()=>{let v=$('#editActionText').value.trim(),t=state.tasks.find(x=>x.id===editingTaskId);if(!v||!t)return;t.actions.push({id:uid(),text:v,done:false});$('#editActionText').value='';renderEditActions()};
+$('#editActionText').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addEditAction').click()}});
+$('#closeProject').onclick=()=>{$('#projectDialog').close();editingTaskId=null};
+$('#saveProject').onclick=()=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.title=$('#editTitle').value.trim()||t.title;t.category=$('#editCategory').value;t.priority=$('#editPriority').value;t.owner=$('#editOwner').value.trim();t.due=$('#editDue').value;t.note=$('#editNote').value.trim();t.actions=t.actions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim()}));t.updated=now();save();$('#projectDialog').close();editingTaskId=null;render();toast('تغییرات ذخیره شد')};
+
+function renderTasks(){let q=$('#searchTask')?.value?.toLowerCase()||'',f=$('#filterStatus')?.value||'all';let sorted=[...state.tasks].sort((a,b)=>new Date(b.updated)-new Date(a.updated));let all=sorted.filter(t=>(f==='all'||t.status===f)&&JSON.stringify(t).toLowerCase().includes(q));$('#backlogList').innerHTML=all.map(taskCard).join('');$('#backlogEmpty').style.display=all.length?'none':'block';let today=sorted.filter(t=>t.status==='today');$('#todayList').innerHTML=today.map(taskCard).join('');$('#todayEmpty').style.display=today.length?'none':'block';$('#activeCount').textContent=`${today.length}/۵`;}
+$('#searchTask').oninput=renderTasks;$('#filterStatus').onchange=renderTasks;
+
+$('#addIncoming').onclick=()=>{let name=$('#inName').value.trim(),topic=$('#inTopic').value.trim();if(!name&&!topic)return alert('حداقل نام یا موضوع را وارد کن.');state.incoming.unshift({id:uid(),name,topic,priority:$('#inPriority').value,decision:$('#inDecision').value.trim(),delegate:$('#inDelegate').value.trim(),follow:$('#inFollow').value,done:false});['#inName','#inTopic','#inDecision','#inDelegate','#inFollow'].forEach(x=>$(x).value='');save();render();};
+function renderIncoming(){let a=state.incoming;$('#incomingList').innerHTML=a.map(x=>`<div class="item"><div class="item-head"><div><div class="title">${esc(x.name||'بدون نام')} • ${esc(x.topic||'بدون موضوع')}</div><div class="meta">${x.decision?'تصمیم: '+esc(x.decision):'بدون تصمیم'} ${x.delegate?'• ارجاع: '+esc(x.delegate):''} ${x.follow?'• پیگیری: '+esc(x.follow):''}</div></div><span class="badge ${x.priority}">${x.priority}</span></div><div class="actions"><button class="iconbtn" onclick="incomingToTask('${x.id}')">تبدیل به پروژه</button><button class="iconbtn danger" onclick="delIncoming('${x.id}')">حذف</button></div></div>`).join('');$('#incomingEmpty').style.display=a.length?'none':'block';}
+window.incomingToTask=id=>{let x=state.incoming.find(y=>y.id===id);if(!x)return;state.tasks.unshift({id:uid(),title:x.topic||('پیگیری '+x.name),category:'سایر',priority:x.priority,owner:x.delegate,due:x.follow,note:'ورودی از '+x.name,actions:x.decision?[{id:uid(),text:x.decision,done:false}]:[],status:'backlog',created:now(),updated:now()});save();render();toast('به مخزن منتقل شد')};window.delIncoming=id=>{state.incoming=state.incoming.filter(x=>x.id!==id);save();render();};
+
+$('#addParking').onclick=()=>{let text=$('#parkText').value.trim();if(!text)return;state.parking.unshift({id:uid(),text});$('#parkText').value='';save();render();};
+function renderParking(){let a=state.parking;$('#parkingList').innerHTML=a.map(x=>`<div class="item"><div class="title">${esc(x.text)}</div><div class="actions"><button class="iconbtn" onclick="parkingToTask('${x.id}')">انتقال به مخزن</button><button class="iconbtn danger" onclick="delParking('${x.id}')">حذف</button></div></div>`).join('');$('#parkingEmpty').style.display=a.length?'none':'block';}
+window.parkingToTask=id=>{let x=state.parking.find(y=>y.id===id);if(!x)return;state.tasks.unshift({id:uid(),title:x.text,category:'ایده و توسعه',priority:'C',owner:'',due:'',note:'',actions:[],status:'backlog',created:now(),updated:now()});state.parking=state.parking.filter(y=>y.id!==id);save();render();};window.delParking=id=>{state.parking=state.parking.filter(x=>x.id!==id);save();render();};
+
+['focusText','reviewProgress','reviewDelegate','reviewWin'].forEach(id=>{$('#'+id).value=state.notes[id]||'';$('#'+id).oninput=e=>{state.notes[id]=e.target.value;save();}});
+$('#brainLock').onclick=()=>$('#brainDialog').showModal();$('#closeBrain').onclick=()=>$('#brainDialog').close();$('#showStep').onclick=()=>{let v=$('#brainNext').value.trim();if(!v)return alert('کوچک‌ترین قدم بعدی را بنویس.');$('#singleStep').textContent='فقط همین کار: '+v;$('#singleStep').style.display='block';};$('#printToday').onclick=()=>print();
+function backupPayload(){return {app:'Araz Flow',appVersion:'1.2',schemaVersion:DB_SCHEMA_VERSION,exportedAt:new Date().toISOString(),data:state};}
+function backupFilename(){const d=new Date(),pad=n=>String(n).padStart(2,'0');return `araz-flow-backup-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;}
+function backupBlob(){return new Blob([JSON.stringify(backupPayload(),null,2)],{type:'application/json'});}
+function downloadBackup(){const blob=backupBlob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=backupFilename();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);localStorage.setItem('arazFlowLastBackupAt',new Date().toISOString());updateBackupPanel();toast('فایل پشتیبان ساخته شد');}
+$('#exportBackup').onclick=downloadBackup;
+$('#shareBackup').onclick=async()=>{const file=new File([backupBlob()],backupFilename(),{type:'application/json'});try{if(navigator.canShare?.({files:[file]})){await navigator.share({title:'پشتیبان Araz Flow',files:[file]});localStorage.setItem('arazFlowLastBackupAt',new Date().toISOString());updateBackupPanel();}else downloadBackup();}catch(e){if(e.name!=='AbortError')downloadBackup();}};
+$('#chooseRestore').onclick=()=>$('#restoreFile').click();
+$('#restoreFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const incoming=parsed.data||parsed;if(!incoming||!Array.isArray(incoming.tasks))throw new Error('ساختار فایل معتبر نیست');if(!confirm(`اطلاعات فعلی با فایل «${file.name}» جایگزین شود؟`))return;createEmergencyBackup(state,'قبل از بازیابی فایل '+file.name);state=incoming;normalize();render();toast('اطلاعات با موفقیت بازیابی شد');}catch(err){alert('فایل پشتیبان معتبر نیست یا قابل خواندن نیست.');}finally{e.target.value='';}};
+function updateBackupPanel(){const info=$('#backupInfo'),stats=$('#dataStats');if(!info||!stats)return;const last=localStorage.getItem('arazFlowLastBackupAt');info.textContent=last?'آخرین فایل پشتیبان: '+new Date(last).toLocaleString('fa-IR'):'هنوز فایل پشتیبان نگرفته‌ای.';const done=state.tasks.filter(t=>t.status==='done').length;stats.innerHTML=`<span class="badge">${state.tasks.length} پروژه</span><span class="badge">${state.tasks.reduce((n,t)=>n+(t.actions?.length||0),0)} اقدام</span><span class="badge">${state.incoming.length} ورودی</span><span class="badge">${state.parking.length} مورد پارک‌شده</span><span class="badge">${done} پروژه تکمیل‌شده</span>`;$('#schemaVersionText').textContent=state.schemaVersion||DB_SCHEMA_VERSION;}
+function render(){renderTasks();renderIncoming();renderParking();updateBackupPanel();}renderDraftActions();render();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
