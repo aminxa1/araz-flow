@@ -9,7 +9,8 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=5;
 const APP_VERSION='2.0.0';
-const APP_BUILD='005';
+const APP_BUILD='006';
+const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
@@ -112,7 +113,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 005'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 006'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -197,6 +198,68 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show'
 function activeAction(t){return (t.actions||[]).find(a=>!a.done)}
 function doneCount(t){return (t.actions||[]).filter(a=>a.done).length}
 function progressPct(t){return t.actions?.length?Math.round(doneCount(t)/t.actions.length*100):0}
+let latestServerVersion=null;
+let lastVersionCheckAt=0;
+function buildNumber(value){const n=Number.parseInt(String(value||'0').replace(/\D/g,''),10);return Number.isFinite(n)?n:0;}
+function setUpdateStatus(status,message){
+  const box=$('#updateStatus');
+  if(box){box.className='storage-health '+status;box.textContent=message;}
+}
+async function fetchServerVersion(){
+  const response=await fetch(`${VERSION_ENDPOINT}?t=${Date.now()}`,{cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
+  if(!response.ok)throw new Error(`Version check failed: ${response.status}`);
+  const info=await response.json();
+  if(!info||!info.build)throw new Error('Invalid version file');
+  return info;
+}
+async function checkForUpdates({silent=false}={}){
+  lastVersionCheckAt=Date.now();
+  if(!silent)setUpdateStatus('checking','در حال بررسی نسخه منتشرشده...');
+  try{
+    const info=await fetchServerVersion();
+    latestServerVersion=info;
+    const badge=$('#serverBuildBadge');
+    if(badge)badge.innerHTML=`نسخه سرور: <b>${esc(info.version||APP_VERSION)} • Build ${esc(info.build)}</b>`;
+    const newer=buildNumber(info.build)>buildNumber(APP_BUILD);
+    if(newer){
+      setUpdateStatus('warning',`Build ${info.build} آماده نصب است.`);
+      const text=$('#updateDialogText');
+      if(text)text.innerHTML=`نسخه <b>${esc(info.version||APP_VERSION)} • Build ${esc(info.build)}</b> آماده است.${info.notes?`<br><span class="meta">${esc(info.notes)}</span>`:''}`;
+      if(!$('#updateDialog').open)$('#updateDialog').showModal();
+      return true;
+    }
+    setUpdateStatus('ok',`آخرین نسخه نصب است: Build ${APP_BUILD}`);
+    if(!silent)toast('آخرین نسخه را داری');
+    return false;
+  }catch(err){
+    console.warn('Version check failed',err);
+    setUpdateStatus('warning','بررسی نسخه ممکن نشد؛ اتصال اینترنت را بررسی کن.');
+    if(!silent)toast('بررسی به‌روزرسانی انجام نشد');
+    return false;
+  }
+}
+async function applyAvailableUpdate(){
+  const target=latestServerVersion?.build;
+  if(!target)return checkForUpdates();
+  setUpdateStatus('checking',`در حال آماده‌سازی Build ${target}...`);
+  emergencySyncWrite('قبل از به‌روزرسانی برنامه');
+  try{await flushSaves();}catch{}
+  try{createEmergencyBackup(state,`قبل از به‌روزرسانی به Build ${target}`);}catch{}
+  try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(err){console.warn('Update cleanup failed',err)}
+  const base=new URL('./',location.href);
+  base.searchParams.set('build',String(target));
+  base.searchParams.set('refresh',String(Date.now()));
+  location.replace(base.href);
+}
 async function initApp(){
   state=await loadState();
   normalize();
@@ -278,9 +341,16 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden') emergencySyncWrite('خروج از برنامه');
 });
 window.addEventListener('pagehide',()=>emergencySyncWrite('بسته شدن صفحه'));
+$('#checkUpdate').onclick=()=>checkForUpdates();
+$('#updateLater').onclick=()=>$('#updateDialog').close();
+$('#updateNow').onclick=applyAvailableUpdate;
+$('#installedBuildText').textContent=APP_BUILD;
+setTimeout(()=>checkForUpdates({silent:true}),1800);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&(Date.now()-lastVersionCheckAt)>15*60*1000)checkForUpdates({silent:true});
+});
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>Promise.all(regs.map(r=>r.unregister()))).catch(()=>{});
-  if('caches' in window) caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
+  navigator.serviceWorker.register(`./sw.js?v=${APP_BUILD}`,{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('Service worker registration failed',err));
 }
 }
 initApp().catch(err=>{console.error(err);alert('راه‌اندازی دیتابیس با خطا روبه‌رو شد. صفحه را دوباره باز کن.');});

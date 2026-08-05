@@ -1,7 +1,8 @@
-# Araz Flow 2.0.0 — Build 005
+# Build 006
 
-- تغییر نام مخزن کارها به پروژه‌های جاری
-- نمایش اولویت با ستاره
-- مرتب‌سازی بر اساس مهلت، سپس اولویت، سپس تاریخ ثبت قدیمی‌تر
-- پروژه‌های بدون مهلت در انتهای فهرست
-- حفظ کامل داده‌ها و ساختار ذخیره‌سازی Build 004
+- Added Version Manager.
+- Automatic no-cache check against version.json.
+- In-app update prompt.
+- Safe update flow: flush data, emergency backup, clear app cache, reload newest build.
+- Added manual “Check for updates” control.
+- Preserved Build 005 project ordering and priority stars.

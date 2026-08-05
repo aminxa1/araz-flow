@@ -11,12 +11,12 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=006" />
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 005</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 006</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="backlog">پروژه‌های جاری</button>
@@ -101,6 +101,16 @@
       </div>
       <div style="height:16px"></div>
       <div class="card"><h2>وضعیت اطلاعات فعلی</h2><div class="content"><div id="dataStats" class="row"></div></div></div>
+      <div style="height:16px"></div>
+      <div class="card"><h2>مدیریت نسخه</h2><div class="content">
+        <div class="notice">برنامه نسخه منتشرشده روی سرور را بررسی می‌کند. با به‌روزرسانی، اطلاعات پروژه‌ها دست‌نخورده می‌ماند.</div>
+        <div class="row" style="margin-top:12px">
+          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">006</span></b></span>
+          <span class="badge" id="serverBuildBadge">نسخه سرور: در حال بررسی...</span>
+        </div>
+        <div id="updateStatus" class="storage-health checking" style="margin-top:12px">در حال بررسی نسخه...</div>
+        <button class="btn teal" id="checkUpdate" style="margin-top:12px">بررسی به‌روزرسانی</button>
+      </div></div>
     </section>
   </main>
 </div>
@@ -121,7 +131,11 @@
 </div><div class="dialog-actions"><button class="btn secondary" id="closeProject">انصراف</button><button class="btn teal" id="saveProject">ذخیره تغییرات</button></div></dialog>
 
 <dialog id="nextActionDialog"><div class="dialog-head">اقدام انجام شد</div><div class="dialog-body"><div id="nextActionContent"></div></div><div class="dialog-actions" id="nextActionButtons"></div></dialog>
+<dialog id="updateDialog"><div class="dialog-head">نسخه جدید آماده است</div><div class="dialog-body">
+  <div class="notice" id="updateDialogText">نسخه جدید Araz Flow آماده نصب است.</div>
+  <p class="meta">پیش از به‌روزرسانی، اطلاعات فعلی به‌صورت اضطراری ذخیره می‌شوند. دیتابیس حذف نخواهد شد.</p>
+</div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
-<script src="./app.js?v=005" defer></script>
+<script src="./app.js?v=006" defer></script>
 </body>
 </html>

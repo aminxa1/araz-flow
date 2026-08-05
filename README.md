@@ -1,3 +1,3 @@
-# Araz Flow 2.0.0 — Build 005
+Araz Flow 2.0.0 - Build 006
 
-ترتیب پروژه‌ها: مهلت زودتر، اولویت بالاتر، تاریخ ثبت قدیمی‌تر.
+Version Manager: automatic server version checks and safe in-app updates.
