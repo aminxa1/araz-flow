@@ -9,7 +9,7 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=5;
 const APP_VERSION='2.0.0';
-const APP_BUILD='002';
+const APP_BUILD='003';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
@@ -112,7 +112,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 002'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 003'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -122,13 +122,26 @@ function save(options={}){
   state.meta.revision=(Number(state.meta.revision)||0)+1;
   const packet=clone(state);
   changesSinceSnapshot++;
+
+  // حیاتی: نسخه ایمنی را همین لحظه و به‌صورت همگام می‌نویسیم.
+  // در Build 002 نوشتن localStorage داخل Promise انجام می‌شد و اگر کاربر
+  // بلافاصله صفحه را می‌بست، مرورگر ممکن بود پیش از اجرای صف، صفحه را نابود کند.
+  let immediateLocalOk=false;
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(packet));
+    const immediateCheck=safeParse(localStorage.getItem(STORAGE_KEY));
+    immediateLocalOk=isValidState(immediateCheck)&&immediateCheck.meta?.revision===packet.meta?.revision;
+  }catch(err){console.error('Immediate safety storage write failed',err)}
+
   saveQueue=saveQueue.then(async()=>{
-    let localOk=false,idbOk=false;
-    try{
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(packet));
-      const check=safeParse(localStorage.getItem(STORAGE_KEY));
-      localOk=isValidState(check)&&check.meta?.revision===packet.meta?.revision;
-    }catch(err){console.error('Safety storage write failed',err)}
+    let localOk=immediateLocalOk,idbOk=false;
+    if(!localOk){
+      try{
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(packet));
+        const check=safeParse(localStorage.getItem(STORAGE_KEY));
+        localOk=isValidState(check)&&check.meta?.revision===packet.meta?.revision;
+      }catch(err){console.error('Safety storage retry failed',err)}
+    }
     try{
       await idbSet(DB_RECORD_KEY,packet);
       const check=await idbGet(DB_RECORD_KEY);
@@ -248,8 +261,19 @@ function render(){renderTasks();renderIncoming();renderParking();updateBackupPan
 setTimeout(testStorage,400);
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save({forceSnapshot:true,reason:'خروج از برنامه'})});
-window.addEventListener('pagehide',()=>{save({forceSnapshot:true,reason:'بسته شدن صفحه'})});
+function emergencySyncWrite(reason){
+  if(!state)return;
+  try{
+    state.meta=state.meta||{};
+    state.meta.updatedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    createEmergencyBackup(state,reason);
+  }catch(err){console.warn('Emergency synchronous write failed',err)}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden') emergencySyncWrite('خروج از برنامه');
+});
+window.addEventListener('pagehide',()=>emergencySyncWrite('بسته شدن صفحه'));
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW registration failed',err));
 }
 initApp().catch(err=>{console.error(err);alert('راه‌اندازی دیتابیس با خطا روبه‌رو شد. صفحه را دوباره باز کن.');});
