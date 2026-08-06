@@ -7,9 +7,9 @@ const DB_STORE='app';
 const DB_RECORD_KEY='state';
 const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
-const DB_SCHEMA_VERSION=6;
+const DB_SCHEMA_VERSION=7;
 const APP_VERSION='2.0.0';
-const APP_BUILD='007';
+const APP_BUILD='008';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
@@ -121,7 +121,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 007'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 008'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -322,9 +322,39 @@ $('#editActionText').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preven
 $('#closeProject').onclick=()=>{$('#projectDialog').close();editingTaskId=null};
 $('#saveProject').onclick=()=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.title=$('#editTitle').value.trim()||t.title;t.category=$('#editCategory').value;t.priority=$('#editPriority').value;t.due=$('#editDue').value;t.note=$('#editNote').value.trim();t.actions=t.actions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim()}));t.updated=now();save();$('#projectDialog').close();editingTaskId=null;render();toast('تغییرات ذخیره شد')};
 
-function renderTodayPicker(){const rows=[];state.tasks.filter(t=>t.status!=='done').sort(compareProjects).forEach(project=>(project.actions||[]).forEach(action=>{if(!action.done&&action.status!=='today')rows.push({project,action});}));$('#todayActionPicker').innerHTML=rows.map(({project,action})=>`<div class="item"><div class="title">${esc(action.text)}</div><div class="meta project-context">${esc(project.title)}</div><div class="actions"><button class="iconbtn primary" onclick="pickActionToday('${project.id}','${action.id}')">افزودن به امروز</button></div></div>`).join('');$('#todayActionPickerEmpty').style.display=rows.length?'none':'block';}
+let todayPickerProjectId=null;
+function pendingActions(project){return (project.actions||[]).filter(action=>!action.done&&action.status!=='today');}
+function matchingProjects(query=''){
+  const q=query.trim().toLowerCase();
+  return state.tasks.filter(project=>project.status!=='done'&&pendingActions(project).length).sort(compareProjects).filter(project=>{
+    if(!q)return true;
+    return project.title.toLowerCase().includes(q)||pendingActions(project).some(action=>action.text.toLowerCase().includes(q));
+  });
+}
+function renderTodayPicker(){
+  const query=$('#todayPickerSearch')?.value||'';
+  const projectList=$('#todayProjectPicker'),actionList=$('#todayActionPicker'),empty=$('#todayActionPickerEmpty'),toolbar=$('#todayPickerToolbar'),current=$('#todayPickerCurrent');
+  if(todayPickerProjectId){
+    const project=state.tasks.find(x=>x.id===todayPickerProjectId);
+    const q=query.trim().toLowerCase();
+    const actions=project?pendingActions(project).filter(a=>!q||a.text.toLowerCase().includes(q)||project.title.toLowerCase().includes(q)):[];
+    projectList.style.display='none';actionList.style.display='grid';toolbar.style.display='flex';current.textContent=project?project.title:'';
+    actionList.innerHTML=actions.map(action=>`<div class="item"><div class="title">${esc(action.text)}</div><div class="actions"><button class="iconbtn primary" onclick="pickActionToday('${project.id}','${action.id}')">افزودن به امروز</button></div></div>`).join('');
+    empty.style.display=actions.length?'none':'block';
+    empty.textContent=project?'اقدام انجام‌نشده‌ای مطابق جست‌وجو پیدا نشد.':'پروژه پیدا نشد.';
+    return;
+  }
+  const projects=matchingProjects(query);
+  toolbar.style.display='none';current.textContent='';projectList.style.display='grid';actionList.style.display='none';
+  projectList.innerHTML=projects.map(project=>`<button class="picker-project" type="button" onclick="openTodayPickerProject('${project.id}')"><span><b>${esc(project.title)}</b><small>${pendingActions(project).length} اقدام انجام‌نشده</small></span><span class="badge ${project.priority}">${priorityStars(project.priority)}</span></button>`).join('');
+  empty.style.display=projects.length?'none':'block';
+  empty.textContent='پروژه یا اقدام مطابق جست‌وجو پیدا نشد.';
+}
+window.openTodayPickerProject=projectId=>{todayPickerProjectId=projectId;$('#todayPickerSearch').value='';renderTodayPicker();};
 window.pickActionToday=(projectId,actionId)=>{moveActionToday(projectId,actionId);renderTodayPicker();};
-$('#addActionToToday').onclick=()=>{renderTodayPicker();$('#todayActionDialog').showModal();};
+$('#todayPickerBack').onclick=()=>{todayPickerProjectId=null;$('#todayPickerSearch').value='';renderTodayPicker();};
+$('#todayPickerSearch').oninput=renderTodayPicker;
+$('#addActionToToday').onclick=()=>{todayPickerProjectId=null;$('#todayPickerSearch').value='';renderTodayPicker();$('#todayActionDialog').showModal();setTimeout(()=>$('#todayPickerSearch').focus(),50);};
 $('#closeTodayActionDialog').onclick=()=>$('#todayActionDialog').close();
 
 function renderTasks(){let q=$('#searchTask')?.value?.toLowerCase()||'',f=$('#filterStatus')?.value||'all';let sorted=[...state.tasks].sort(compareProjects);let all=sorted.filter(t=>(f==='all'||t.status===f)&&JSON.stringify(t).toLowerCase().includes(q));$('#backlogList').innerHTML=all.map(projectCard).join('');$('#backlogEmpty').style.display=all.length?'none':'block';let today=todayActions();$('#todayList').innerHTML=today.map(todayActionCard).join('');$('#todayEmpty').style.display=today.length?'none':'block';$('#activeCount').textContent=String(today.length);}
@@ -351,6 +381,56 @@ $('#restoreFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)ret
 function updateBackupPanel(){const info=$('#backupInfo'),stats=$('#dataStats');if(!info||!stats||!state)return;const last=localStorage.getItem('arazFlowLastBackupAt');info.textContent=last?'آخرین فایل پشتیبان: '+new Date(last).toLocaleString('fa-IR'):'هنوز فایل پشتیبان نگرفته‌ای.';const done=state.tasks.filter(t=>t.status==='done').length;stats.innerHTML=`<span class="badge">${state.tasks.length} پروژه</span><span class="badge">${state.tasks.reduce((n,t)=>n+(t.actions?.length||0),0)} اقدام</span><span class="badge">${state.incoming.length} ورودی</span><span class="badge">${state.parking.length} مورد پارک‌شده</span><span class="badge">${done} پروژه تکمیل‌شده</span>`;$('#schemaVersionText').textContent=state.schemaVersion||DB_SCHEMA_VERSION;const health=$('#storageHealth');if(health){health.className='storage-health '+storageHealth.status;health.textContent=storageHealth.message;}const revision=$('#revisionText');if(revision)revision.textContent=state.meta?.revision||0;}
 $('#testStorage').onclick=async()=>{const ok=await testStorage();toast(ok?'ذخیره‌سازی سالم است':'آزمایش ذخیره‌سازی ناموفق بود')};
 $('#restoreEmergency').onclick=restoreLatestEmergency;
+function healthResult(name,ok,detail=''){return {name,ok:Boolean(ok),detail:String(detail||'')}}
+async function runHealthSuite(){
+  const panel=$('#healthSuitePanel'),summary=$('#healthSuiteSummary'),resultsBox=$('#healthSuiteResults'),meta=$('#healthSuiteMeta');
+  panel.style.display='block';summary.className='storage-health checking';summary.textContent='در حال اجرای آزمایش‌ها...';resultsBox.innerHTML='';meta.textContent='';
+  const started=Date.now(),results=[];
+  const original=clone(state);
+  try{
+    results.push(healthResult('ساختار داده اصلی',isValidState(state)&&Array.isArray(state.tasks),'پروژه‌ها و وضعیت اصلی قابل خواندن‌اند.'));
+    const synthetic=[
+      {id:'a',title:'بحرانی دیرتر',due:'2026-08-20',priority:'A',created:'2026-08-01',status:'backlog',actions:[]},
+      {id:'b',title:'عادی زودتر',due:'2026-08-10',priority:'C',created:'2026-08-03',status:'backlog',actions:[]},
+      {id:'c',title:'مهم زودتر',due:'2026-08-10',priority:'B',created:'2026-08-04',status:'backlog',actions:[]},
+      {id:'d',title:'مهم زودتر قدیمی',due:'2026-08-10',priority:'B',created:'2026-08-02',status:'backlog',actions:[]}
+    ].sort(compareProjects);
+    results.push(healthResult('مرتب‌سازی پروژه‌ها',synthetic.map(x=>x.id).join(',')==='d,c,b,a',synthetic.map(x=>x.title).join(' ← ')));
+    const testProject={id:'health-project',title:'پروژه آزمایشی سلامت',category:'سایر',priority:'B',due:'',note:'',status:'backlog',created:now(),updated:now(),actions:[{id:'health-action',text:'اقدام آزمایشی',done:false,status:'backlog',scheduledAt:''}]};
+    const working=clone(original);working.tasks.push(testProject);
+    let a=working.tasks.at(-1).actions[0];a.status='today';a.scheduledAt=now();
+    const todayOk=a.status==='today'&&!a.done;
+    a.status='deferred';a.scheduledAt='';const deferredOk=a.status==='deferred';
+    a.status='waiting';const waitingOk=a.status==='waiting';
+    a.status='done';a.done=true;const doneOk=a.done&&a.status==='done';
+    results.push(healthResult('چرخه وضعیت اقدام',todayOk&&deferredOk&&waitingOk&&doneOk,'امروز، تعویق، انتظار و انجام‌شده بررسی شد.'));
+    const pickerProject={...testProject,actions:[{id:'x',text:'تماس با حسابدار',done:false,status:'backlog',scheduledAt:''}]};
+    const pickerMatch=pickerProject.title.includes('سلامت')||pickerProject.actions.some(x=>x.text.includes('حسابدار'));
+    results.push(healthResult('جست‌وجوی پروژه و اقدام',pickerMatch,'جست‌وجو در عنوان پروژه و اقدام پاسخ داد.'));
+    const payload={app:'Araz Flow',appVersion:APP_VERSION,schemaVersion:DB_SCHEMA_VERSION,exportedAt:new Date().toISOString(),data:original};
+    const parsed=JSON.parse(JSON.stringify(payload));
+    results.push(healthResult('ساخت و خواندن پشتیبان',isValidState(parsed.data)&&parsed.schemaVersion===DB_SCHEMA_VERSION,`Schema ${parsed.schemaVersion}`));
+    const storageOk=await testStorage();
+    results.push(healthResult('ذخیره‌سازی دو‌لایه',storageOk,storageHealth.message));
+    let versionOk=false,versionDetail='';
+    try{const r=await fetch(`${VERSION_ENDPOINT}?health=${Date.now()}`,{cache:'no-store'});const v=await r.json();versionOk=r.ok&&Boolean(v.build);versionDetail=versionOk?`Build سرور: ${v.build}`:'پاسخ نسخه نامعتبر بود';}catch(err){versionDetail='دسترسی به version.json ناموفق بود';}
+    results.push(healthResult('مدیریت نسخه',versionOk,versionDetail));
+    const swSupported='serviceWorker' in navigator;
+    const swRegistered=!swSupported||Boolean(await navigator.serviceWorker.getRegistration('./'));
+    results.push(healthResult('Service Worker و PWA',swSupported&&swRegistered,swSupported?(swRegistered?'ثبت شده است':'ثبت نشده است'):'مرورگر پشتیبانی نمی‌کند'));
+    state=original;normalize();await flushSaves();
+  }catch(err){
+    state=original;normalize();await flushSaves();
+    results.push(healthResult('اجرای مجموعه تست',false,err?.message||'خطای ناشناخته'));
+  }
+  const passed=results.filter(x=>x.ok).length,failed=results.length-passed,allOk=failed===0;
+  summary.className='storage-health '+(allOk?'ok':'error');summary.textContent=allOk?`همه ${passed} آزمایش با موفقیت گذشتند.`:`${passed} آزمایش موفق و ${failed} آزمایش ناموفق بود.`;
+  resultsBox.innerHTML=results.map(x=>`<div class="health-result ${x.ok?'pass':'fail'}"><span>${x.ok?'✓':'✕'}</span><div><b>${esc(x.name)}</b><small>${esc(x.detail)}</small></div></div>`).join('');
+  const stamp=new Date().toISOString();meta.textContent=`Build ${APP_BUILD} • ${new Date(stamp).toLocaleString('fa-IR')} • ${Date.now()-started} میلی‌ثانیه`;
+  try{localStorage.setItem('arazFlowLastHealthSuite',JSON.stringify({build:APP_BUILD,at:stamp,passed,failed,results}));}catch{}
+  toast(allOk?'آزمایش سلامت کامل موفق بود':'بعضی آزمایش‌ها ناموفق بودند');
+}
+$('#runHealthSuite').onclick=runHealthSuite;
 function render(){renderTasks();renderIncoming();renderParking();updateBackupPanel();}renderDraftActions();render();
 setTimeout(testStorage,400);
 let deferredInstallPrompt=null;

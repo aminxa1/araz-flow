@@ -11,12 +11,12 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=007" />
+  <link rel="stylesheet" href="./styles.css?v=008" />
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 007</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 008</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="backlog">پروژه‌های جاری</button>
@@ -88,6 +88,7 @@
           <div id="storageHealth" class="storage-health checking">در حال بررسی ذخیره‌سازی...</div>
           <div class="row" style="margin-top:12px">
             <button class="btn secondary" id="testStorage">آزمایش ذخیره‌سازی</button>
+            <button class="btn teal" id="runHealthSuite">آزمایش سلامت کامل</button>
             <button class="btn gold" id="restoreEmergency">بازیابی آخرین نسخه اضطراری</button>
           </div>
           <div class="meta" style="margin-top:10px">شماره بازبینی اطلاعات: <b id="revisionText">۰</b></div>
@@ -132,14 +133,12 @@
 
 
 <dialog id="todayActionDialog"><div class="dialog-head">افزودن اقدام به امروز</div><div class="dialog-body">
-  <div class="notice">فقط اقدامات انجام‌نشده نمایش داده می‌شوند. نام پروژه کوچک و کم‌رنگ است تا زمینه گم نشود، اما روی سرت هم فریاد نکشد.</div>
-  <div id="todayActionPicker" class="list" style="margin-top:12px"></div>
-  <div class="empty" id="todayActionPickerEmpty">اقدام انجام‌نشده‌ای برای انتخاب وجود ندارد.</div>
-</div><div class="dialog-actions"><button class="btn secondary" id="closeTodayActionDialog">بستن</button></div></dialog>
-<dialog id="todayActionDialog"><div class="dialog-head">افزودن اقدام به امروز</div><div class="dialog-body">
-  <div class="notice">فقط اقدامات انجام‌نشده نمایش داده می‌شوند. نام پروژه کوچک و کم‌رنگ است تا زمینه گم نشود، اما روی سرت هم فریاد نکشد.</div>
-  <div id="todayActionPicker" class="list" style="margin-top:12px"></div>
-  <div class="empty" id="todayActionPickerEmpty">اقدام انجام‌نشده‌ای برای انتخاب وجود ندارد.</div>
+  <div class="notice">اول پروژه را انتخاب کن، بعد اقدامش را. جست‌وجو هم نام پروژه و هم عنوان اقدام را پیدا می‌کند.</div>
+  <div class="field"><label>جست‌وجو</label><input id="todayPickerSearch" placeholder="نام پروژه یا اقدام..." autocomplete="off" /></div>
+  <div class="picker-toolbar" id="todayPickerToolbar" style="display:none"><button class="btn secondary" id="todayPickerBack" type="button">بازگشت به پروژه‌ها</button><div class="picker-current" id="todayPickerCurrent"></div></div>
+  <div id="todayProjectPicker" class="list" style="margin-top:12px"></div>
+  <div id="todayActionPicker" class="list" style="margin-top:12px;display:none"></div>
+  <div class="empty" id="todayActionPickerEmpty">موردی برای انتخاب پیدا نشد.</div>
 </div><div class="dialog-actions"><button class="btn secondary" id="closeTodayActionDialog">بستن</button></div></dialog>
 <dialog id="nextActionDialog"><div class="dialog-head">اقدام انجام شد</div><div class="dialog-body"><div id="nextActionContent"></div></div><div class="dialog-actions" id="nextActionButtons"></div></dialog>
 <dialog id="updateDialog"><div class="dialog-head">نسخه جدید آماده است</div><div class="dialog-body">
@@ -147,6 +146,6 @@
   <p class="meta">پیش از به‌روزرسانی، اطلاعات فعلی به‌صورت اضطراری ذخیره می‌شوند. دیتابیس حذف نخواهد شد.</p>
 </div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
-<script src="./app.js?v=007" defer></script>
+<script src="./app.js?v=008" defer></script>
 </body>
 </html>
