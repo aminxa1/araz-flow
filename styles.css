@@ -14,3 +14,4 @@
     @media print{.topbar,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;break-inside:avoid}main{max-width:none}.section{display:none!important}#today.section{display:block!important}}
 
 .storage-health{margin-top:14px;padding:12px 14px;border-radius:12px;font-weight:800;border:1px solid transparent}.storage-health.ok{background:#e9f7ef;color:#146c43;border-color:#a9ddbf}.storage-health.warning{background:#fff5d9;color:#855d00;border-color:#ead18b}.storage-health.error{background:#fdeaea;color:#9f2525;border-color:#efb2b2}.storage-health.checking{background:#eef3f9;color:#314b68;border-color:#c9d5e3}
+.project-context{font-size:11px;opacity:.68;margin-top:5px}.today-action-card .title{font-size:18px}.today-action-card{border-right:4px solid var(--teal)}.status-chip{cursor:default;background:#f2f5f8;color:#536273}.today-action-card .actions{margin-top:12px}

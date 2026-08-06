@@ -1,8 +1,9 @@
-# Build 006
+# Build 007
 
-- Added Version Manager.
-- Automatic no-cache check against version.json.
-- In-app update prompt.
-- Safe update flow: flush data, emergency backup, clear app cache, reload newest build.
-- Added manual “Check for updates” control.
-- Preserved Build 005 project ordering and priority stars.
+- نمایش اقدام‌ها به‌جای پروژه‌ها در تب امروز
+- افزودن اقدام به امروز از داخل تب امروز
+- نمایش نام پروژه به‌صورت کوچک و کم‌رنگ برای حفظ زمینه
+- وضعیت‌های اقدام: امروز، در پروژه، در انتظار، به تعویق‌افتاده و انجام‌شده
+- حذف فیلد مسئول از پروژه
+- مهاجرت خودکار داده‌های Build 006 به ساختار اقدام‌محور
+- حفظ Version Manager، PWA، پشتیبان‌گیری و ذخیره‌سازی دوگانه

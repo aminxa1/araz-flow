@@ -1,3 +1,3 @@
-Araz Flow 2.0.0 - Build 006
+# Araz Flow 2.0.0 — Build 007
 
-Version Manager: automatic server version checks and safe in-app updates.
+در این Build واحد اصلی تب امروز از پروژه به اقدام تغییر کرده است. اطلاعات Buildهای قبلی به ساختار جدید مهاجرت می‌شوند.

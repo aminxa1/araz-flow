@@ -11,12 +11,12 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=006" />
+  <link rel="stylesheet" href="./styles.css?v=007" />
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 006</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 007</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="backlog">پروژه‌های جاری</button>
@@ -28,9 +28,9 @@
   <main>
     <div class="notice no-print" style="margin-bottom:12px"><b>محافظت دو‌لایه فعال است:</b> هر تغییر در IndexedDB و حافظه ایمنی مرورگر نوشته و سپس کنترل می‌شود. برنامه همچنین نسخه اضطراری خودکار می‌سازد؛ با این حال فایل پشتیبان دستی همچنان لازم است.</div>
     <section id="today" class="section active">
-      <div class="hero"><div><strong>پروژه فعال ≠ ذهن فعال</strong><small>پروژه‌ها می‌توانند همزمان جلو بروند، اما فقط چند موضوع حق دارند ذهن تو را اشغال کنند.</small></div><div><div class="count" id="activeCount">۰/۵</div><small>محور فعال امروز</small></div></div>
+      <div class="hero"><div><strong>امروز فقط اقدام‌ها را ببین</strong><small>پروژه‌ها در پس‌زمینه می‌مانند؛ اینجا فقط قدم‌هایی دیده می‌شوند که قرار است امروز انجام بدهی.</small></div><div><div class="count" id="activeCount">۰</div><small>اقدام امروز</small></div></div>
       <div class="grid">
-        <div class="card"><h2>پروژه‌ها و محورهای فعال امروز</h2><div class="content"><div id="todayList" class="list"></div><div class="empty" id="todayEmpty">هنوز کاری از مخزن وارد امروز نشده است.</div></div></div>
+        <div class="card"><h2>اقدامات امروز</h2><div class="content"><button class="btn teal no-print" id="addActionToToday">افزودن اقدام به امروز</button><div style="height:12px"></div><div id="todayList" class="list"></div><div class="empty" id="todayEmpty">هنوز اقدامی برای امروز انتخاب نشده است.</div></div></div>
         <div class="card"><h2>کنترل توجه امروز</h2><div class="content">
           <div class="field"><label>تمرکز اصلی امروز روی چیست؟</label><textarea id="focusText" placeholder="فقط یک جمله روشن..."></textarea></div>
           <div style="height:12px"></div><button class="brain-btn" id="brainLock">مغزم قفل کرده</button>
@@ -50,13 +50,13 @@
         <div class="field"><label>عنوان پروژه یا کار</label><input id="taskTitle" placeholder="مثلاً خرید دستگاه جدید" /></div>
         <div class="row"><div class="field"><label>دسته‌بندی</label><select id="taskCategory"><option>فنی و تولید</option><option>مالی و اداری</option><option>بازرگانی و خرید</option><option>فروش و مشتریان</option><option>منابع انسانی</option><option>تعمیرات و نگهداری</option><option>ایده و توسعه</option><option>سایر</option></select></div>
         <div class="field"><label>اولویت</label><select id="taskPriority"><option value="A">★★★ بحرانی</option><option value="B" selected>★★ مهم</option><option value="C">★ عادی</option></select></div>
-        <div class="field"><label>مسئول</label><input id="taskOwner" placeholder="خودم یا نام شخص" /></div></div>
+        </div>
         <div class="row"><div class="field"><label>مهلت</label><input id="taskDue" type="date" /></div></div>
         <div class="field"><label>اقدامات مرحله‌ای</label><div id="newActions" class="steps"></div><div class="add-step"><input id="newActionText" placeholder="مثلاً دریافت مشخصات فنی"/><button class="btn secondary" id="addNewAction" type="button">افزودن اقدام</button></div><div class="meta">می‌توانی چند اقدام ثبت کنی و بعداً هم اقدامات جدید اضافه کنی.</div></div>
         <div class="field"><label>یادداشت</label><textarea id="taskNote"></textarea></div>
         <button class="btn teal" id="addTask">ثبت در پروژه‌های جاری</button>
       </div></div>
-      <div class="card"><h2>فیلتر پروژه‌های جاری</h2><div class="content"><div class="field"><label>جست‌وجو</label><input id="searchTask" placeholder="عنوان، مسئول، دسته‌بندی، اقدام..." /></div><div class="field"><label>وضعیت</label><select id="filterStatus"><option value="all">همه</option><option value="backlog">پروژه‌های جاری</option><option value="today">امروز</option><option value="waiting">در انتظار</option><option value="done">انجام شده</option></select></div></div></div></div>
+      <div class="card"><h2>فیلتر پروژه‌های جاری</h2><div class="content"><div class="field"><label>جست‌وجو</label><input id="searchTask" placeholder="عنوان، دسته‌بندی، اقدام..." /></div><div class="field"><label>وضعیت</label><select id="filterStatus"><option value="all">همه</option><option value="backlog">پروژه‌های جاری</option><option value="done">انجام شده</option></select></div></div></div></div>
       <div style="height:16px"></div><div class="card"><h2>همه پروژه‌ها و کارها</h2><div class="content"><div id="backlogList" class="list"></div><div class="empty" id="backlogEmpty">پروژه جاری ثبت نشده است. برای یک مدیرعامل، این تقریباً رخدادی افسانه‌ای است.</div></div></div>
     </section>
 
@@ -96,7 +96,7 @@
           <div class="notice">بازیابی، اطلاعات فعلی را با محتوای فایل جایگزین می‌کند. برنامه قبل از جایگزینی، یک نسخه اضطراری داخلی می‌سازد.</div>
           <input id="restoreFile" type="file" accept="application/json,.json" style="display:none" />
           <button class="btn gold" id="chooseRestore">انتخاب فایل پشتیبان</button>
-          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۵</b></div>
+          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۶</b></div>
         </div></div>
       </div>
       <div style="height:16px"></div>
@@ -105,7 +105,7 @@
       <div class="card"><h2>مدیریت نسخه</h2><div class="content">
         <div class="notice">برنامه نسخه منتشرشده روی سرور را بررسی می‌کند. با به‌روزرسانی، اطلاعات پروژه‌ها دست‌نخورده می‌ماند.</div>
         <div class="row" style="margin-top:12px">
-          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">006</span></b></span>
+          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">007</span></b></span>
           <span class="badge" id="serverBuildBadge">نسخه سرور: در حال بررسی...</span>
         </div>
         <div id="updateStatus" class="storage-health checking" style="margin-top:12px">در حال بررسی نسخه...</div>
@@ -125,17 +125,28 @@
 <dialog id="projectDialog"><div class="dialog-head" id="projectDialogTitle">جزئیات پروژه</div><div class="dialog-body">
   <div class="field"><label>عنوان</label><input id="editTitle" /></div>
   <div class="row"><div class="field"><label>دسته‌بندی</label><select id="editCategory"><option>فنی و تولید</option><option>مالی و اداری</option><option>بازرگانی و خرید</option><option>فروش و مشتریان</option><option>منابع انسانی</option><option>تعمیرات و نگهداری</option><option>ایده و توسعه</option><option>سایر</option></select></div><div class="field"><label>اولویت</label><select id="editPriority"><option value="A">★★★ بحرانی</option><option value="B">★★ مهم</option><option value="C">★ عادی</option></select></div></div>
-  <div class="row"><div class="field"><label>مسئول</label><input id="editOwner" /></div><div class="field"><label>مهلت</label><input id="editDue" type="date" /></div></div>
+  <div class="row"><div class="field"><label>مهلت</label><input id="editDue" type="date" /></div></div>
   <div class="field"><label>اقدامات مرحله‌ای</label><div id="editActions" class="steps"></div><div class="add-step"><input id="editActionText" placeholder="اقدام جدید"/><button class="btn secondary" id="addEditAction" type="button">افزودن</button></div></div>
   <div class="field"><label>یادداشت</label><textarea id="editNote"></textarea></div>
 </div><div class="dialog-actions"><button class="btn secondary" id="closeProject">انصراف</button><button class="btn teal" id="saveProject">ذخیره تغییرات</button></div></dialog>
 
+
+<dialog id="todayActionDialog"><div class="dialog-head">افزودن اقدام به امروز</div><div class="dialog-body">
+  <div class="notice">فقط اقدامات انجام‌نشده نمایش داده می‌شوند. نام پروژه کوچک و کم‌رنگ است تا زمینه گم نشود، اما روی سرت هم فریاد نکشد.</div>
+  <div id="todayActionPicker" class="list" style="margin-top:12px"></div>
+  <div class="empty" id="todayActionPickerEmpty">اقدام انجام‌نشده‌ای برای انتخاب وجود ندارد.</div>
+</div><div class="dialog-actions"><button class="btn secondary" id="closeTodayActionDialog">بستن</button></div></dialog>
+<dialog id="todayActionDialog"><div class="dialog-head">افزودن اقدام به امروز</div><div class="dialog-body">
+  <div class="notice">فقط اقدامات انجام‌نشده نمایش داده می‌شوند. نام پروژه کوچک و کم‌رنگ است تا زمینه گم نشود، اما روی سرت هم فریاد نکشد.</div>
+  <div id="todayActionPicker" class="list" style="margin-top:12px"></div>
+  <div class="empty" id="todayActionPickerEmpty">اقدام انجام‌نشده‌ای برای انتخاب وجود ندارد.</div>
+</div><div class="dialog-actions"><button class="btn secondary" id="closeTodayActionDialog">بستن</button></div></dialog>
 <dialog id="nextActionDialog"><div class="dialog-head">اقدام انجام شد</div><div class="dialog-body"><div id="nextActionContent"></div></div><div class="dialog-actions" id="nextActionButtons"></div></dialog>
 <dialog id="updateDialog"><div class="dialog-head">نسخه جدید آماده است</div><div class="dialog-body">
   <div class="notice" id="updateDialogText">نسخه جدید Araz Flow آماده نصب است.</div>
   <p class="meta">پیش از به‌روزرسانی، اطلاعات فعلی به‌صورت اضطراری ذخیره می‌شوند. دیتابیس حذف نخواهد شد.</p>
 </div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
-<script src="./app.js?v=006" defer></script>
+<script src="./app.js?v=007" defer></script>
 </body>
 </html>
