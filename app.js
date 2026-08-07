@@ -9,14 +9,14 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=7;
 const APP_VERSION='2.0.0';
-const APP_BUILD='009';
+const APP_BUILD='010';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
-const DIAG_KEY='arazFlowDiagnostics009';
+const DIAG_KEY='arazFlowDiagnostics010';
 const DIAG_MAX=80;
 let diagnosticEntries=[];
 function diagnosticSafe(value){
@@ -56,8 +56,8 @@ function withTimeout(promise,ms,label='عملیات'){
 }
 try{diagnosticEntries=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]');if(!Array.isArray(diagnosticEntries))diagnosticEntries=[]}catch{diagnosticEntries=[]}
 window.addEventListener('error',event=>diagLog('error',event.message||'خطای JavaScript',`${event.filename||''}:${event.lineno||0}:${event.colno||0}\n${event.error?.stack||''}`));
-window.addEventListener('unhandledrejection',event=>diagLog('error','Promise بدون مدیریت رد شد',event.reason?.stack||event.reason||'بدون جزئیات'));
-diagLog('info','app.js بارگذاری شد','Build 009');
+window.addEventListener('unhandledrejection',event=>{const r=event.reason;diagLog('error','Promise بدون مدیریت رد شد',r instanceof Error?`${r.name}: ${r.message}\n${r.stack||''}`:(diagnosticSafe(r)||'بدون جزئیات'));});
+diagLog('info','app.js بارگذاری شد','Build 010');
 function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function isValidState(value){return Boolean(value&&typeof value==='object'&&Array.isArray(value.tasks))}
@@ -242,7 +242,7 @@ async function testStorage(){
   if(localOk&&idbOk) storageHealth={status:'ok',message:'آزمایش موفق: هر دو محل ذخیره‌سازی سالم‌اند.'};
   else if(localOk||idbOk) storageHealth={status:'warning',message:idbOk?'IndexedDB سالم است ولی حافظه ایمنی مرورگر مشکل دارد.':'حافظه ایمنی مرورگر سالم است؛ IndexedDB پاسخ نداد یا خطا داد.'};
   else storageHealth={status:'error',message:'آزمایش ناموفق: فعلاً داده واقعی وارد نکن.'};
-  updateBackupPanel();
+  try{updateBackupPanel()}catch(err){diagLog('error','نمایش نتیجه آزمایش ذخیره‌سازی ناموفق بود',err)}
   diagLog(localOk&&idbOk?'info':'warning','آزمایش ذخیره‌سازی پایان یافت',storageHealth.message);
   return localOk&&idbOk;
 }
@@ -441,7 +441,32 @@ $('#exportBackup').onclick=downloadBackup;
 $('#shareBackup').onclick=async()=>{const file=new File([backupBlob()],backupFilename(),{type:'application/json'});try{if(navigator.canShare?.({files:[file]})){await navigator.share({title:'پشتیبان Araz Flow',files:[file]});localStorage.setItem('arazFlowLastBackupAt',new Date().toISOString());updateBackupPanel();}else downloadBackup();}catch(e){if(e.name!=='AbortError')downloadBackup();}};
 $('#chooseRestore').onclick=()=>$('#restoreFile').click();
 $('#restoreFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const incoming=parsed.data||parsed;if(!incoming||!Array.isArray(incoming.tasks))throw new Error('ساختار فایل معتبر نیست');if(!confirm(`اطلاعات فعلی با فایل «${file.name}» جایگزین شود؟`))return;createEmergencyBackup(state,'قبل از بازیابی فایل '+file.name);state=incoming;normalize();render();toast('اطلاعات با موفقیت بازیابی شد');}catch(err){alert('فایل پشتیبان معتبر نیست یا قابل خواندن نیست.');}finally{e.target.value='';}};
-function updateBackupPanel(){const info=$('#backupInfo'),stats=$('#dataStats');if(!info||!stats||!state)return;const last=localStorage.getItem('arazFlowLastBackupAt');info.textContent=last?'آخرین فایل پشتیبان: '+new Date(last).toLocaleString('fa-IR'):'هنوز فایل پشتیبان نگرفته‌ای.';const done=state.tasks.filter(t=>t.status==='done').length;stats.innerHTML=`<span class="badge">${state.tasks.length} پروژه</span><span class="badge">${state.tasks.reduce((n,t)=>n+(t.actions?.length||0),0)} اقدام</span><span class="badge">${state.incoming.length} ورودی</span><span class="badge">${state.parking.length} مورد پارک‌شده</span><span class="badge">${done} پروژه تکمیل‌شده</span>`;$('#schemaVersionText').textContent=state.schemaVersion||DB_SCHEMA_VERSION;const health=$('#storageHealth');if(health){health.className='storage-health '+storageHealth.status;health.textContent=storageHealth.message;}const revision=$('#revisionText');if(revision)revision.textContent=state.meta?.revision||0;}
+function updateBackupPanel(){
+  try{
+    if(!state||typeof state!=='object')return false;
+    const tasks=Array.isArray(state.tasks)?state.tasks:[];
+    const incoming=Array.isArray(state.incoming)?state.incoming:[];
+    const parking=Array.isArray(state.parking)?state.parking:[];
+    const info=$('#backupInfo');
+    if(info){
+      let last=null;try{last=localStorage.getItem('arazFlowLastBackupAt')}catch{}
+      info.textContent=last?'آخرین فایل پشتیبان: '+new Date(last).toLocaleString('fa-IR'):'هنوز فایل پشتیبان نگرفته‌ای.';
+    }
+    const stats=$('#dataStats');
+    if(stats){
+      const done=tasks.filter(t=>t&&t.status==='done').length;
+      const actionCount=tasks.reduce((n,t)=>n+(Array.isArray(t?.actions)?t.actions.length:0),0);
+      stats.innerHTML=`<span class="badge">${tasks.length} پروژه</span><span class="badge">${actionCount} اقدام</span><span class="badge">${incoming.length} ورودی</span><span class="badge">${parking.length} مورد پارک‌شده</span><span class="badge">${done} پروژه تکمیل‌شده</span>`;
+    }
+    const schema=$('#schemaVersionText');if(schema)schema.textContent=state.schemaVersion||DB_SCHEMA_VERSION;
+    const health=$('#storageHealth');if(health){health.className='storage-health '+(storageHealth?.status||'checking');health.textContent=storageHealth?.message||'در حال بررسی ذخیره‌سازی...';}
+    const revision=$('#revisionText');if(revision)revision.textContent=state.meta?.revision||0;
+    return true;
+  }catch(err){
+    diagLog('error','به‌روزرسانی پنل پشتیبان‌گیری ناموفق بود',err);
+    return false;
+  }
+}
 $('#testStorage').onclick=async()=>{const ok=await testStorage();toast(ok?'ذخیره‌سازی سالم است':'آزمایش ذخیره‌سازی ناموفق بود')};
 $('#restoreEmergency').onclick=restoreLatestEmergency;
 function healthResult(name,ok,detail=''){return {name,ok:Boolean(ok),detail:String(detail||'')}}
@@ -528,4 +553,4 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(`./sw.js?v=${APP_BUILD}`,{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('Service worker registration failed',err));
 }
 }
-initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی Build 009 نگاه کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی Build 010 نگاه کن.');});
