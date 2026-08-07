@@ -1,24 +1,11 @@
-# Build 012
+# Changelog
 
-- رفع خطای `ReferenceError: Can't find variable: updateBackupPanel`.
-- انتقال تابع پنل پشتیبان‌گیری به scope سراسری تا `save()` و `testStorage()` بتوانند به آن دسترسی داشته باشند.
-- حفظ Network-first و پاک‌سازی کش‌های قدیمی از Build 011.
-- حفظ Schema 7 و عدم تغییر ساختار داده‌های کاربر.
+## 2.1.0 — Build 001
+- Added People tab.
+- Added action delegation and per-person follow-up.
+- Added delegated/done/take-back lifecycle.
+- Migrated state schema to 8 while preserving old data.
+- Version manager now compares semantic version before build number.
 
-# Build 012
-
-- فایل‌های `app.js` و `styles.css` به روش Network-first بارگذاری می‌شوند.
-- کش‌های قدیمی Araz Flow هنگام فعال‌شدن Service Worker جدید پاک می‌شوند.
-- HTML و JavaScript شماره Build خود را با هم تطبیق می‌دهند.
-- گزارش تشخیصی Build 012 از گزارش Buildهای قبلی جداست.
-- آزمایش سلامت یک تست مستقل برای هماهنگی فایل‌های نسخه دارد.
-- ساختار داده و Schema 7 بدون تغییر باقی مانده است.
-
-# Build 010
-
-- رفع خطای Promise ناشی از `updateBackupPanel`.
-- مقاوم‌سازی کامل پنل پشتیبان‌گیری در برابر داده یا عنصر DOM ناقص.
-- جداسازی نتیجه تست ذخیره‌سازی از خطاهای رابط کاربری.
-- ثبت نام، پیام و Stack کامل خطاهای Promise.
-- استفاده از گزارش تشخیصی مستقل Build 010.
-- حفظ Schema 7 و سازگاری کامل با داده‌های Build 009/008.
+## 2.0.0 — Build 012
+- Stable dual-storage baseline with 9/9 health checks.

@@ -3,24 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="araz-flow-build" content="012" />
+  <meta name="araz-flow-build" content="001" />
   <meta name="theme-color" content="#0f2747" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Araz Flow" />
-  <title>Araz Flow 2.0.0</title>
+  <title>Araz Flow 2.1.0</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=012" />
+  <link rel="stylesheet" href="./styles.css?v=210001" />
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 012</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.1.0 • Build 001</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="backlog">پروژه‌های جاری</button>
+      <button class="tab" data-tab="people">افراد</button>
       <button class="tab" data-tab="incoming">ورودی‌ها</button>
       <button class="tab" data-tab="parking">پارکینگ ذهن</button>
       <button class="tab" data-tab="backup">پشتیبان‌گیری</button>
@@ -61,6 +62,19 @@
       <div style="height:16px"></div><div class="card"><h2>همه پروژه‌ها و کارها</h2><div class="content"><div id="backlogList" class="list"></div><div class="empty" id="backlogEmpty">پروژه جاری ثبت نشده است. برای یک مدیرعامل، این تقریباً رخدادی افسانه‌ای است.</div></div></div>
     </section>
 
+
+    <section id="people" class="section">
+      <div class="grid">
+        <div class="card"><h2>افراد</h2><div class="content">
+          <div class="notice">فقط نام فرد را ثبت کن. هر اقدام را می‌توانی از «امروز» یا جزئیات پروژه به یکی از این افراد واگذار کنی.</div>
+          <div class="add-step"><input id="personName" placeholder="نام فرد..." autocomplete="off"/><button class="btn teal" id="addPerson" type="button">افزودن فرد</button></div>
+        </div></div>
+        <div class="card"><h2>منطق پیگیری</h2><div class="content"><p>اقدام واگذار‌شده از برنامه کاری خودت خارج می‌شود، اما اینجا تا زمان انجام یا برگشت به خودت باقی می‌ماند.</p><p class="meta">واگذاری یعنی حذف مسئولیت پیگیری نیست. حیف، زندگی مدیریتی چنین بخش تخفیفی ندارد.</p></div></div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="card"><h2>اقدامات محول‌شده به افراد</h2><div class="content"><div id="peopleList" class="people-list"></div><div class="empty" id="peopleEmpty">هنوز فردی تعریف نشده است.</div></div></div>
+    </section>
+
     <section id="incoming" class="section">
       <div class="grid"><div class="card"><h2>ثبت مراجعه یا ورودی جدید</h2><div class="content">
         <div class="row"><div class="field"><label>نام شخص/شرکت</label><input id="inName" /></div><div class="field"><label>موضوع</label><input id="inTopic" /></div></div>
@@ -80,7 +94,7 @@
     <section id="backup" class="section">
       <div class="grid">
         <div class="card"><h2>پشتیبان‌گیری از اطلاعات</h2><div class="content">
-          <div class="notice">این فایل شامل پروژه‌ها، اقدامات، ورودی‌ها، پارکینگ ذهن و یادداشت‌هاست. آن را در Files یا iCloud نگه دار.</div>
+          <div class="notice">این فایل شامل پروژه‌ها، اقدامات، افراد و واگذاری‌ها، ورودی‌ها، پارکینگ ذهن و یادداشت‌هاست. آن را در Files یا iCloud نگه دار.</div>
           <div class="row">
             <button class="btn teal" id="exportBackup">دریافت فایل پشتیبان</button>
             <button class="btn secondary" id="shareBackup">اشتراک‌گذاری پشتیبان</button>
@@ -98,14 +112,14 @@
           <div class="notice">بازیابی، اطلاعات فعلی را با محتوای فایل جایگزین می‌کند. برنامه قبل از جایگزینی، یک نسخه اضطراری داخلی می‌سازد.</div>
           <input id="restoreFile" type="file" accept="application/json,.json" style="display:none" />
           <button class="btn gold" id="chooseRestore">انتخاب فایل پشتیبان</button>
-          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۷</b></div>
+          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۸</b></div>
         </div></div>
       </div>
       <div style="height:16px"></div>
       <div class="card"><h2>وضعیت اطلاعات فعلی</h2><div class="content"><div id="dataStats" class="row"></div></div></div>
       <div id="healthSuitePanel" class="health-suite" style="display:none"><div class="health-suite-title">نتیجه آزمایش سلامت کامل</div><div id="healthSuiteSummary" class="storage-health checking">هنوز اجرا نشده است.</div><div id="healthSuiteResults" class="health-results"></div><div id="healthSuiteMeta" class="meta" style="margin-top:10px"></div></div>
       <div style="height:16px"></div>
-      <div class="card"><h2>عیب‌یابی Build 012</h2><div class="content">
+      <div class="card"><h2>عیب‌یابی 2.1.0 • Build 001</h2><div class="content">
         <div class="notice">این بخش خطاهای JavaScript، Promiseها و مراحل آزمایش ذخیره‌سازی را ثبت می‌کند. اگر چیزی گیر کرد، متن این کادر را برای بررسی بفرست.</div>
         <div id="diagnosticStatus" class="storage-health ok">تا این لحظه خطای اجرایی ثبت نشده است.</div>
         <div class="row" style="margin-top:12px"><button class="btn secondary" id="copyDiagnostics" type="button">کپی گزارش</button><button class="btn ghost" id="clearDiagnostics" type="button">پاک کردن گزارش</button></div>
@@ -115,7 +129,7 @@
       <div class="card"><h2>مدیریت نسخه</h2><div class="content">
         <div class="notice">برنامه نسخه منتشرشده روی سرور را بررسی می‌کند. با به‌روزرسانی، اطلاعات پروژه‌ها دست‌نخورده می‌ماند.</div>
         <div class="row" style="margin-top:12px">
-          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">012</span></b></span>
+          <span class="badge">نسخه نصب‌شده: <b>2.1.0 • Build <span id="installedBuildText">001</span></b></span>
           <span class="badge" id="serverBuildBadge">نسخه سرور: در حال بررسی...</span>
         </div>
         <div id="updateStatus" class="storage-health checking" style="margin-top:12px">در حال بررسی نسخه...</div>
@@ -149,13 +163,19 @@
   <div id="todayActionPicker" class="list" style="margin-top:12px;display:none"></div>
   <div class="empty" id="todayActionPickerEmpty">موردی برای انتخاب پیدا نشد.</div>
 </div><div class="dialog-actions"><button class="btn secondary" id="closeTodayActionDialog">بستن</button></div></dialog>
+
+<dialog id="assignDialog"><div class="dialog-head">واگذاری اقدام</div><div class="dialog-body">
+  <div class="notice">اقدام: <b id="assignActionTitle"></b></div>
+  <div id="assignPeopleList" class="list"></div>
+  <div class="empty" id="assignPeopleEmpty">هنوز فردی تعریف نشده. اول از تب «افراد» یک نام اضافه کن.</div>
+</div><div class="dialog-actions"><button class="btn secondary" id="closeAssignDialog">بستن</button></div></dialog>
 <dialog id="nextActionDialog"><div class="dialog-head">اقدام انجام شد</div><div class="dialog-body"><div id="nextActionContent"></div></div><div class="dialog-actions" id="nextActionButtons"></div></dialog>
 <dialog id="updateDialog"><div class="dialog-head">نسخه جدید آماده است</div><div class="dialog-body">
   <div class="notice" id="updateDialogText">نسخه جدید Araz Flow آماده نصب است.</div>
   <p class="meta">پیش از به‌روزرسانی، اطلاعات فعلی به‌صورت اضطراری ذخیره می‌شوند. دیتابیس حذف نخواهد شد.</p>
 </div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
-<script>window.__ARAZ_HTML_BUILD__='012';</script>
-<script src="./app.js?v=012" defer></script>
+<script>window.__ARAZ_HTML_BUILD__='001';</script>
+<script src="./app.js?v=210001" defer></script>
 </body>
 </html>

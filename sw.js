@@ -1,8 +1,8 @@
-const CACHE_NAME='araz-flow-shell-012';
+const CACHE_NAME='araz-flow-shell-210001';
 const APP_SHELL=[
   './index.html',
-  './styles.css?v=012',
-  './app.js?v=012',
+  './styles.css?v=210001',
+  './app.js?v=210001',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
