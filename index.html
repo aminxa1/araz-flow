@@ -16,7 +16,7 @@
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 008</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 009</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="backlog">پروژه‌های جاری</button>
@@ -97,16 +97,24 @@
           <div class="notice">بازیابی، اطلاعات فعلی را با محتوای فایل جایگزین می‌کند. برنامه قبل از جایگزینی، یک نسخه اضطراری داخلی می‌سازد.</div>
           <input id="restoreFile" type="file" accept="application/json,.json" style="display:none" />
           <button class="btn gold" id="chooseRestore">انتخاب فایل پشتیبان</button>
-          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۶</b></div>
+          <div class="meta" style="margin-top:12px">نسخه پایگاه داده: <b id="schemaVersionText">۷</b></div>
         </div></div>
       </div>
       <div style="height:16px"></div>
       <div class="card"><h2>وضعیت اطلاعات فعلی</h2><div class="content"><div id="dataStats" class="row"></div></div></div>
+      <div id="healthSuitePanel" class="health-suite" style="display:none"><div class="health-suite-title">نتیجه آزمایش سلامت کامل</div><div id="healthSuiteSummary" class="storage-health checking">هنوز اجرا نشده است.</div><div id="healthSuiteResults" class="health-results"></div><div id="healthSuiteMeta" class="meta" style="margin-top:10px"></div></div>
+      <div style="height:16px"></div>
+      <div class="card"><h2>عیب‌یابی Build 009</h2><div class="content">
+        <div class="notice">این بخش خطاهای JavaScript، Promiseها و مراحل آزمایش ذخیره‌سازی را ثبت می‌کند. اگر چیزی گیر کرد، متن این کادر را برای بررسی بفرست.</div>
+        <div id="diagnosticStatus" class="storage-health ok">تا این لحظه خطای اجرایی ثبت نشده است.</div>
+        <div class="row" style="margin-top:12px"><button class="btn secondary" id="copyDiagnostics" type="button">کپی گزارش</button><button class="btn ghost" id="clearDiagnostics" type="button">پاک کردن گزارش</button></div>
+        <pre id="diagnosticLog" class="diagnostic-log">در حال آماده‌سازی گزارش...</pre>
+      </div></div>
       <div style="height:16px"></div>
       <div class="card"><h2>مدیریت نسخه</h2><div class="content">
         <div class="notice">برنامه نسخه منتشرشده روی سرور را بررسی می‌کند. با به‌روزرسانی، اطلاعات پروژه‌ها دست‌نخورده می‌ماند.</div>
         <div class="row" style="margin-top:12px">
-          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">007</span></b></span>
+          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">009</span></b></span>
           <span class="badge" id="serverBuildBadge">نسخه سرور: در حال بررسی...</span>
         </div>
         <div id="updateStatus" class="storage-health checking" style="margin-top:12px">در حال بررسی نسخه...</div>
@@ -146,6 +154,6 @@
   <p class="meta">پیش از به‌روزرسانی، اطلاعات فعلی به‌صورت اضطراری ذخیره می‌شوند. دیتابیس حذف نخواهد شد.</p>
 </div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
-<script src="./app.js?v=008" defer></script>
+<script src="./app.js?v=009" defer></script>
 </body>
 </html>

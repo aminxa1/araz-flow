@@ -9,13 +9,55 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=7;
 const APP_VERSION='2.0.0';
-const APP_BUILD='008';
+const APP_BUILD='009';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
+const DIAG_KEY='arazFlowDiagnostics009';
+const DIAG_MAX=80;
+let diagnosticEntries=[];
+function diagnosticSafe(value){
+  try{
+    if(value instanceof Error)return value.stack||value.message;
+    if(typeof value==='string')return value;
+    return JSON.stringify(value);
+  }catch{return String(value)}
+}
+function renderDiagnostics(){
+  const box=document.querySelector('#diagnosticLog');
+  const status=document.querySelector('#diagnosticStatus');
+  if(status){
+    const errors=diagnosticEntries.filter(x=>x.level==='error').length;
+    const warnings=diagnosticEntries.filter(x=>x.level==='warning').length;
+    status.className='storage-health '+(errors?'error':warnings?'warning':'ok');
+    status.textContent=errors?`${errors} خطا ثبت شده است.`:warnings?`${warnings} هشدار ثبت شده است.`:'تا این لحظه خطای اجرایی ثبت نشده است.';
+  }
+  if(box){
+    box.textContent=diagnosticEntries.map(x=>`[${x.time}] ${x.level.toUpperCase()} — ${x.message}${x.detail?`\n${x.detail}`:''}`).join('\n\n')||'هنوز رویدادی ثبت نشده است.';
+  }
+}
+function diagLog(level,message,detail=''){
+  const entry={time:new Date().toLocaleTimeString('fa-IR'),level,message:String(message||''),detail:diagnosticSafe(detail||'')};
+  diagnosticEntries.push(entry);
+  diagnosticEntries=diagnosticEntries.slice(-DIAG_MAX);
+  try{localStorage.setItem(DIAG_KEY,JSON.stringify(diagnosticEntries))}catch{}
+  renderDiagnostics();
+  try{console[level==='error'?'error':level==='warning'?'warn':'log']('[ArazFlow]',message,detail||'')}catch{}
+}
+function withTimeout(promise,ms,label='عملیات'){
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label} پس از ${ms/1000} ثانیه پاسخ نداد`)),ms)})
+  ]).finally(()=>clearTimeout(timer));
+}
+try{diagnosticEntries=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]');if(!Array.isArray(diagnosticEntries))diagnosticEntries=[]}catch{diagnosticEntries=[]}
+window.addEventListener('error',event=>diagLog('error',event.message||'خطای JavaScript',`${event.filename||''}:${event.lineno||0}:${event.colno||0}\n${event.error?.stack||''}`));
+window.addEventListener('unhandledrejection',event=>diagLog('error','Promise بدون مدیریت رد شد',event.reason?.stack||event.reason||'بدون جزئیات'));
+diagLog('info','app.js بارگذاری شد','Build 009');
 function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function isValidState(value){return Boolean(value&&typeof value==='object'&&Array.isArray(value.tasks))}
@@ -121,7 +163,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 008'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 009'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -176,14 +218,32 @@ function save(options={}){
 async function flushSaves(){await saveQueue}
 async function testStorage(){
   storageHealth={status:'checking',message:'در حال آزمایش نوشتن و خواندن...'};updateBackupPanel();
+  diagLog('info','آزمایش ذخیره‌سازی شروع شد');
   const probe={token:uid(),createdAt:new Date().toISOString()};
   let localOk=false,idbOk=false;
-  try{localStorage.setItem('arazFlowStorageProbe',JSON.stringify(probe));localOk=safeParse(localStorage.getItem('arazFlowStorageProbe'))?.token===probe.token;localStorage.removeItem('arazFlowStorageProbe')}catch{}
-  try{await idbSet('storage:probe',probe);idbOk=(await idbGet('storage:probe'))?.token===probe.token;await idbDelete('storage:probe')}catch{}
+  try{
+    localStorage.setItem('arazFlowStorageProbe',JSON.stringify(probe));
+    localOk=safeParse(localStorage.getItem('arazFlowStorageProbe'))?.token===probe.token;
+    localStorage.removeItem('arazFlowStorageProbe');
+    diagLog(localOk?'info':'warning','آزمایش localStorage',localOk?'موفق':'ناموفق');
+  }catch(err){diagLog('error','خطا در localStorage',err)}
+  try{
+    diagLog('info','آزمایش IndexedDB: نوشتن');
+    await withTimeout(idbSet('storage:probe',probe),5000,'نوشتن IndexedDB');
+    diagLog('info','آزمایش IndexedDB: خواندن');
+    const idbProbe=await withTimeout(idbGet('storage:probe'),5000,'خواندن IndexedDB');
+    idbOk=idbProbe?.token===probe.token;
+    diagLog(idbOk?'info':'warning','آزمایش IndexedDB: تطبیق داده',idbOk?'موفق':'داده خوانده شد ولی تطبیق نداشت');
+    try{await withTimeout(idbDelete('storage:probe'),5000,'حذف Probe از IndexedDB')}catch(err){diagLog('warning','پاک‌سازی Probe ناموفق بود',err)}
+  }catch(err){
+    idbOk=false;
+    diagLog('error','آزمایش IndexedDB ناموفق/Timeout شد',err);
+  }
   if(localOk&&idbOk) storageHealth={status:'ok',message:'آزمایش موفق: هر دو محل ذخیره‌سازی سالم‌اند.'};
-  else if(localOk||idbOk) storageHealth={status:'warning',message:'فقط یکی از دو محل ذخیره‌سازی سالم است.'};
+  else if(localOk||idbOk) storageHealth={status:'warning',message:idbOk?'IndexedDB سالم است ولی حافظه ایمنی مرورگر مشکل دارد.':'حافظه ایمنی مرورگر سالم است؛ IndexedDB پاسخ نداد یا خطا داد.'};
   else storageHealth={status:'error',message:'آزمایش ناموفق: فعلاً داده واقعی وارد نکن.'};
   updateBackupPanel();
+  diagLog(localOk&&idbOk?'info':'warning','آزمایش ذخیره‌سازی پایان یافت',storageHealth.message);
   return localOk&&idbOk;
 }
 async function restoreLatestEmergency(){
@@ -269,8 +329,11 @@ async function applyAvailableUpdate(){
   location.replace(base.href);
 }
 async function initApp(){
-  state=await loadState();
+  diagLog('info','راه‌اندازی برنامه شروع شد');
+  state=await withTimeout(loadState(),8000,'خواندن دیتابیس هنگام راه‌اندازی');
+  diagLog('info','داده اولیه خوانده شد',`پروژه‌ها: ${state?.tasks?.length||0}`);
   normalize();
+  diagLog('info','نرمال‌سازی داده انجام شد');
 
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active');render();});
 
@@ -384,7 +447,8 @@ $('#restoreEmergency').onclick=restoreLatestEmergency;
 function healthResult(name,ok,detail=''){return {name,ok:Boolean(ok),detail:String(detail||'')}}
 async function runHealthSuite(){
   const panel=$('#healthSuitePanel'),summary=$('#healthSuiteSummary'),resultsBox=$('#healthSuiteResults'),meta=$('#healthSuiteMeta');
-  panel.style.display='block';summary.className='storage-health checking';summary.textContent='در حال اجرای آزمایش‌ها...';resultsBox.innerHTML='';meta.textContent='';
+  if(!panel||!summary||!resultsBox||!meta){diagLog('error','پنل آزمایش سلامت در صفحه پیدا نشد');return;}
+  panel.style.display='block';summary.className='storage-health checking';summary.textContent='در حال اجرای آزمایش‌ها...';resultsBox.innerHTML='';meta.textContent='';diagLog('info','آزمایش سلامت کامل شروع شد');
   const started=Date.now(),results=[];
   const original=clone(state);
   try{
@@ -418,9 +482,9 @@ async function runHealthSuite(){
     const swSupported='serviceWorker' in navigator;
     const swRegistered=!swSupported||Boolean(await navigator.serviceWorker.getRegistration('./'));
     results.push(healthResult('Service Worker و PWA',swSupported&&swRegistered,swSupported?(swRegistered?'ثبت شده است':'ثبت نشده است'):'مرورگر پشتیبانی نمی‌کند'));
-    state=original;normalize();await flushSaves();
+    state=original;normalize();await withTimeout(flushSaves(),7000,'تکمیل صف ذخیره‌سازی در Health Suite');
   }catch(err){
-    state=original;normalize();await flushSaves();
+    state=original;normalize();try{await withTimeout(flushSaves(),7000,'بازیابی صف ذخیره‌سازی پس از خطا')}catch(flushErr){diagLog('error','صف ذخیره‌سازی پس از خطا پاسخ نداد',flushErr)}
     results.push(healthResult('اجرای مجموعه تست',false,err?.message||'خطای ناشناخته'));
   }
   const passed=results.filter(x=>x.ok).length,failed=results.length-passed,allOk=failed===0;
@@ -428,9 +492,13 @@ async function runHealthSuite(){
   resultsBox.innerHTML=results.map(x=>`<div class="health-result ${x.ok?'pass':'fail'}"><span>${x.ok?'✓':'✕'}</span><div><b>${esc(x.name)}</b><small>${esc(x.detail)}</small></div></div>`).join('');
   const stamp=new Date().toISOString();meta.textContent=`Build ${APP_BUILD} • ${new Date(stamp).toLocaleString('fa-IR')} • ${Date.now()-started} میلی‌ثانیه`;
   try{localStorage.setItem('arazFlowLastHealthSuite',JSON.stringify({build:APP_BUILD,at:stamp,passed,failed,results}));}catch{}
+  diagLog(allOk?'info':'warning','آزمایش سلامت کامل پایان یافت',`${passed} موفق / ${failed} ناموفق`);
   toast(allOk?'آزمایش سلامت کامل موفق بود':'بعضی آزمایش‌ها ناموفق بودند');
 }
 $('#runHealthSuite').onclick=runHealthSuite;
+const clearDiag=$('#clearDiagnostics');if(clearDiag)clearDiag.onclick=()=>{diagnosticEntries=[];try{localStorage.removeItem(DIAG_KEY)}catch{};diagLog('info','گزارش عیب‌یابی پاک شد');};
+const copyDiag=$('#copyDiagnostics');if(copyDiag)copyDiag.onclick=async()=>{const text=diagnosticEntries.map(x=>`[${x.time}] ${x.level.toUpperCase()} — ${x.message}${x.detail?`\n${x.detail}`:''}`).join('\n\n');try{await navigator.clipboard.writeText(text);toast('گزارش عیب‌یابی کپی شد')}catch{alert(text||'گزارشی وجود ندارد')}};
+renderDiagnostics();
 function render(){renderTasks();renderIncoming();renderParking();updateBackupPanel();}renderDraftActions();render();
 setTimeout(testStorage,400);
 let deferredInstallPrompt=null;
@@ -460,4 +528,4 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(`./sw.js?v=${APP_BUILD}`,{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('Service worker registration failed',err));
 }
 }
-initApp().catch(err=>{console.error(err);alert('راه‌اندازی دیتابیس با خطا روبه‌رو شد. صفحه را دوباره باز کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی Build 009 نگاه کن.');});
