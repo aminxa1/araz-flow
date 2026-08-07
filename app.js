@@ -7,16 +7,16 @@ const DB_STORE='app';
 const DB_RECORD_KEY='state';
 const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
-const DB_SCHEMA_VERSION=8;
+const DB_SCHEMA_VERSION=9;
 const APP_VERSION='2.1.0';
-const APP_BUILD='001';
+const APP_BUILD='002';
 const VERSION_ENDPOINT='./version.json';
-const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],people:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
+const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],people:[],incoming:[],parking:[],notes:{},capacityByDate:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
-const DIAG_KEY='arazFlowDiagnostics210001';
+const DIAG_KEY='arazFlowDiagnostics210002';
 const DIAG_MAX=80;
 let diagnosticEntries=[];
 function diagnosticSafe(value){
@@ -58,7 +58,7 @@ try{diagnosticEntries=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]');if(!Array
 window.addEventListener('error',event=>diagLog('error',event.message||'خطای JavaScript',`${event.filename||''}:${event.lineno||0}:${event.colno||0}\n${event.error?.stack||''}`));
 window.addEventListener('unhandledrejection',event=>{const r=event.reason;diagLog('error','Promise بدون مدیریت رد شد',r instanceof Error?`${r.name}: ${r.message}\n${r.stack||''}`:(diagnosticSafe(r)||'بدون جزئیات'));});
 window.__ARAZ_APP_BUILD__=APP_BUILD;
-diagLog('info','app.js بارگذاری شد','Version 2.1.0 • Build 001');
+diagLog('info','app.js بارگذاری شد','Version 2.1.0 • Build 002');
 function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function isValidState(value){return Boolean(value&&typeof value==='object'&&Array.isArray(value.tasks))}
@@ -176,24 +176,31 @@ function updateBackupPanel(){
 
 function normalize(){
   state=isValidState(state)?state:clone(defaultState);
+  const today=todayKey();
   state.tasks=(state.tasks||[]).map(t=>{
     const legacyProjectToday=t.status==='today';
     const oldActions=Array.isArray(t.actions)?t.actions:[];
     const firstPendingIndex=oldActions.findIndex(a=>!a.done);
     const normalized={id:t.id||uid(),created:t.created||new Date().toISOString(),updated:t.updated||t.created||new Date().toISOString(),status:t.status==='done'?'done':'backlog',priority:t.priority||'B',category:t.category||'سایر',due:t.due||'',note:t.note||'',...t};
     normalized.status=t.status==='done'?'done':'backlog';
-    normalized.actions=oldActions.length?oldActions.map((a,index)=>({id:a.id||uid(),text:String(a.text||''),done:Boolean(a.done),status:a.done?'done':(a.status||((legacyProjectToday&&index===firstPendingIndex)?'today':'backlog')),scheduledAt:a.scheduledAt||((legacyProjectToday&&index===firstPendingIndex)?new Date().toISOString():''),assignedTo:a.assignedTo||'',assignedAt:a.assignedAt||''})):(t.next?[{id:uid(),text:t.next,done:false,status:legacyProjectToday?'today':'backlog',scheduledAt:legacyProjectToday?new Date().toISOString():'',assignedTo:'',assignedAt:''}]:[]);
+    normalized.actions=oldActions.length?oldActions.map((a,index)=>{
+      let status=a.done?'done':(a.status||((legacyProjectToday&&index===firstPendingIndex)?'today':'backlog'));
+      let plannedFor=a.plannedFor||((status==='today')?today:(status==='tomorrow'?tomorrowKey():''));
+      if(!a.done&&(status==='today'||status==='tomorrow')&&plannedFor&&plannedFor<=today){status='today';plannedFor=today;}
+      return {id:a.id||uid(),text:String(a.text||''),done:Boolean(a.done),status,scheduledAt:a.scheduledAt||((legacyProjectToday&&index===firstPendingIndex)?new Date().toISOString():''),plannedFor,weight:actionWeight(a),assignedTo:a.assignedTo||'',assignedAt:a.assignedAt||''};
+    }):(t.next?[{id:uid(),text:t.next,done:false,status:legacyProjectToday?'today':'backlog',scheduledAt:legacyProjectToday?new Date().toISOString():'',plannedFor:legacyProjectToday?today:'',weight:1,assignedTo:'',assignedAt:''}]:[]);
     return normalized;
   });
   state.people=Array.isArray(state.people)?state.people.map(person=>({id:person.id||uid(),name:String(person.name||'').trim(),created:person.created||new Date().toISOString()})).filter(person=>person.name):[];
   state.incoming=Array.isArray(state.incoming)?state.incoming:[];
   state.parking=Array.isArray(state.parking)?state.parking:[];
   state.notes=state.notes&&typeof state.notes==='object'?state.notes:{};
+  state.capacityByDate=state.capacityByDate&&typeof state.capacityByDate==='object'?state.capacityByDate:{};
   state.meta=state.meta&&typeof state.meta==='object'?state.meta:{};
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 001'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 002'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -205,7 +212,7 @@ function save(options={}){
   changesSinceSnapshot++;
 
   // حیاتی: نسخه ایمنی را همین لحظه و به‌صورت همگام می‌نویسیم.
-  // در Build 002 نوشتن localStorage داخل Promise انجام می‌شد و اگر کاربر
+  // از Build 004 به بعد نوشتن localStorage همگام انجام می‌شود و اگر کاربر
   // بلافاصله صفحه را می‌بست، مرورگر ممکن بود پیش از اجرای صف، صفحه را نابود کند.
   let immediateLocalOk=false;
   try{
@@ -292,6 +299,30 @@ async function restoreLatestEmergency(){
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function now(){return new Date().toISOString()}
+function localDateKey(date=new Date()){
+  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function todayKey(){return localDateKey(new Date())}
+function tomorrowKey(){const d=new Date();d.setDate(d.getDate()+1);return localDateKey(d)}
+function persianDateTime(value=new Date(),withTime=true){
+  const d=value instanceof Date?value:new Date(value);
+  if(Number.isNaN(d.getTime()))return '—';
+  const options=withTime?{calendar:'persian',year:'numeric',month:'long',day:'numeric',weekday:'long',hour:'2-digit',minute:'2-digit'}:{calendar:'persian',year:'numeric',month:'long',day:'numeric',weekday:'long'};
+  try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',options).format(d)}catch{return d.toLocaleString('fa-IR')}
+}
+function updatePersianClock(){const el=$('#persianClock');if(el)el.textContent=persianDateTime(new Date(),true)}
+function actionWeight(action){const n=Number(action?.weight);return Number.isFinite(n)&&n>0?Math.round(n):1}
+function capacityFor(key){const n=Number(state?.capacityByDate?.[key]);return Number.isFinite(n)&&n>0?Math.round(n):0}
+function plannedRowsFor(key){const rows=[];state.tasks.forEach(project=>(project.actions||[]).forEach(action=>{if(!action.done&&action.plannedFor===key&&(action.status==='today'||action.status==='tomorrow'))rows.push({project,action});}));return rows}
+function usedCapacity(key,excludeActionId=''){return plannedRowsFor(key).filter(x=>x.action.id!==excludeActionId).reduce((sum,x)=>sum+actionWeight(x.action),0)}
+function capacityCheck(action,key){const limit=capacityFor(key),used=usedCapacity(key,action?.id),weight=actionWeight(action);return {limit,used,weight,ok:limit>0&&(used+weight)<=limit,remaining:Math.max(0,limit-used)};}
+function scheduleAction(project,action,status,key){
+  const check=capacityCheck(action,key);
+  if(!check.limit){alert('اول ظرفیت این روز را مشخص کن.');return false;}
+  if(!check.ok){alert(`ظرفیت کافی نیست. ${check.remaining} واحد جا مانده ولی این اقدام ${check.weight} واحد است.`);return false;}
+  action.done=false;action.status=status;action.plannedFor=key;action.scheduledAt=now();action.assignedTo='';action.assignedAt='';project.updated=now();return true;
+}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
 function activeAction(t){return (t.actions||[]).find(a=>!a.done)}
 function doneCount(t){return (t.actions||[]).filter(a=>a.done).length}
@@ -378,58 +409,58 @@ async function initApp(){
 
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active');render();});
 
-function renderDraftActions(){const box=$('#newActions');box.innerHTML=draftActions.map((a,i)=>`<div class="step-row"><span class="step-num">${i+1}</span><input value="${esc(a.text)}" oninput="updateDraftAction(${i},this.value)"><div class="step-tools"><button class="mini" onclick="moveDraft(${i},-1)">↑</button><button class="mini" onclick="moveDraft(${i},1)">↓</button><button class="mini" onclick="removeDraft(${i})">حذف</button></div></div>`).join('');}
-window.updateDraftAction=(i,v)=>{draftActions[i].text=v};window.removeDraft=i=>{draftActions.splice(i,1);renderDraftActions()};window.moveDraft=(i,d)=>{let j=i+d;if(j<0||j>=draftActions.length)return;[draftActions[i],draftActions[j]]=[draftActions[j],draftActions[i]];renderDraftActions()};
-$('#addNewAction').onclick=()=>{let v=$('#newActionText').value.trim();if(!v)return;draftActions.push({id:uid(),text:v,done:false});$('#newActionText').value='';renderDraftActions()};
+function renderDraftActions(){const box=$('#newActions');box.innerHTML=draftActions.map((a,i)=>`<div class="step-row weighted-step"><span class="step-num">${i+1}</span><input value="${esc(a.text)}" oninput="updateDraftAction(${i},this.value)"><label class="weight-field">واحد <input type="number" min="1" max="20" value="${actionWeight(a)}" onchange="updateDraftWeight(${i},this.value)"></label><div class="step-tools"><button class="mini" onclick="moveDraft(${i},-1)">↑</button><button class="mini" onclick="moveDraft(${i},1)">↓</button><button class="mini" onclick="removeDraft(${i})">حذف</button></div></div>`).join('');}
+window.updateDraftAction=(i,v)=>{draftActions[i].text=v};window.updateDraftWeight=(i,v)=>{draftActions[i].weight=Math.max(1,Math.min(20,Number(v)||1));};window.removeDraft=i=>{draftActions.splice(i,1);renderDraftActions()};window.moveDraft=(i,d)=>{let j=i+d;if(j<0||j>=draftActions.length)return;[draftActions[i],draftActions[j]]=[draftActions[j],draftActions[i]];renderDraftActions()};
+$('#addNewAction').onclick=()=>{let v=$('#newActionText').value.trim();if(!v)return;draftActions.push({id:uid(),text:v,done:false,weight:1});$('#newActionText').value='';renderDraftActions()};
 $('#newActionText').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addNewAction').click()}});
 
-$('#addTask').onclick=()=>{let title=$('#taskTitle').value.trim();if(!title)return alert('عنوان پروژه یا کار را بنویس.');let acts=draftActions.filter(a=>a.text.trim()).map(a=>({id:a.id||uid(),text:a.text.trim(),done:false,status:'backlog',scheduledAt:'',assignedTo:'',assignedAt:''}));state.tasks.unshift({id:uid(),title,category:$('#taskCategory').value,priority:$('#taskPriority').value,due:$('#taskDue').value,note:$('#taskNote').value.trim(),actions:acts,status:'backlog',created:now(),updated:now()});['#taskTitle','#taskDue','#taskNote'].forEach(x=>$(x).value='');draftActions=[];renderDraftActions();save();render();toast('در پروژه‌های جاری ثبت شد');};
+$('#addTask').onclick=()=>{let title=$('#taskTitle').value.trim();if(!title)return alert('عنوان پروژه یا کار را بنویس.');let acts=draftActions.filter(a=>a.text.trim()).map(a=>({id:a.id||uid(),text:a.text.trim(),done:false,status:'backlog',scheduledAt:'',plannedFor:'',weight:actionWeight(a),assignedTo:'',assignedAt:''}));state.tasks.unshift({id:uid(),title,category:$('#taskCategory').value,priority:$('#taskPriority').value,due:$('#taskDue').value,note:$('#taskNote').value.trim(),actions:acts,status:'backlog',created:now(),updated:now()});['#taskTitle','#taskDue','#taskNote'].forEach(x=>$(x).value='');draftActions=[];renderDraftActions();save();render();toast('در پروژه‌های جاری ثبت شد');};
 
 function priorityRank(priority){return ({A:3,B:2,C:1})[priority]||1;}
 function priorityStars(priority){return '★'.repeat(priorityRank(priority));}
 function priorityLabel(priority){return ({A:'بحرانی',B:'مهم',C:'عادی'})[priority]||'عادی';}
 function compareProjects(a,b){const ah=Boolean(a.due),bh=Boolean(b.due);if(ah!==bh)return ah?-1:1;if(ah&&bh){const d=String(a.due).localeCompare(String(b.due));if(d)return d;}const p=priorityRank(b.priority)-priorityRank(a.priority);if(p)return p;return new Date(a.created||0)-new Date(b.created||0);}
-function actionStatusLabel(status){return ({backlog:'در پروژه',today:'امروز',waiting:'در انتظار',deferred:'به تعویق افتاده',delegated:'واگذار شده',done:'انجام‌شده'})[status]||'در پروژه';}
+function actionStatusLabel(status){return ({backlog:'در پروژه',today:'امروز',waiting:'در انتظار',deferred:'به تعویق افتاده',tomorrow:'فردا',delegated:'واگذار شده',done:'انجام‌شده'})[status]||'در پروژه';}
 function personById(id){return (state.people||[]).find(p=>p.id===id)||null;}
 function assigneeLabel(action){const person=personById(action?.assignedTo);return person?person.name:(action?.assignedTo?'فرد حذف‌شده':'');}
 function activeAction(t){return (t.actions||[]).find(a=>!a.done&&a.status!=='done');}
-function todayActions(){
-  const rows=[];
-  state.tasks.forEach(project=>(project.actions||[]).forEach((action,index)=>{if(!action.done&&action.status==='today')rows.push({project,action,index});}));
-  return rows.sort((a,b)=>new Date(a.action.scheduledAt||0)-new Date(b.action.scheduledAt||0));
-}
 function projectCard(t){const a=activeAction(t),pct=progressPct(t);return `<div class="item"><div class="item-head"><div><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.category)} ${t.due?'• مهلت: '+esc(t.due):''} • وضعیت: ${t.status==='done'?'انجام‌شده':'پروژه‌های جاری'}</div></div><span class="badge ${t.priority}" title="${priorityLabel(t.priority)}">${priorityStars(t.priority)}</span></div>
-${a?`<div class="active-action"><b>اقدام بعدی:</b> ${esc(a.text)} <span class="meta">(${actionStatusLabel(a.status)}${a.assignedTo?' • '+esc(assigneeLabel(a)):''})</span></div>`:`<div class="active-action"><b>${t.status==='done'?'پروژه تکمیل شده':'اقدام انجام‌نشده‌ای ثبت نشده'}</b></div>`}
+${a?`<div class="active-action"><b>اقدام بعدی:</b> ${esc(a.text)} <span class="meta">(${actionStatusLabel(a.status)} • ${actionWeight(a)} واحد${a.assignedTo?' • '+esc(assigneeLabel(a)):''})</span></div>`:`<div class="active-action"><b>${t.status==='done'?'پروژه تکمیل شده':'اقدام انجام‌نشده‌ای ثبت نشده'}</b></div>`}
 <div class="action-count">${doneCount(t)} اقدام انجام‌شده از ${t.actions.length}</div><div class="progress"><span style="width:${pct}%"></span></div>${t.note?`<div class="meta">${esc(t.note)}</div>`:''}
-<div class="actions">${a&&a.status!=='today'&&a.status!=='delegated'?`<button class="iconbtn primary" onclick="moveActionToday('${t.id}','${a.id}')">اقدام بعدی به امروز</button>`:''}<button class="iconbtn" onclick="openProject('${t.id}')">جزئیات و اقدامات</button>${t.status!=='done'?`<button class="iconbtn" onclick="setProjectDone('${t.id}')">اتمام پروژه</button>`:''}<button class="iconbtn danger" onclick="delTask('${t.id}')">حذف</button></div></div>`}
-function todayActionCard(row){const {project,action}=row;return `<div class="item today-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta project-context">از پروژه: ${esc(project.title)}</div></div><span class="badge ${project.priority}" title="${priorityLabel(project.priority)}">${priorityStars(project.priority)}</span></div>
-${action.assignedTo?`<div class="meta delegated-note">واگذار شده به: ${esc(assigneeLabel(action))}</div>`:''}<div class="actions"><button class="iconbtn primary" onclick="completeTodayAction('${project.id}','${action.id}')">✓ انجام شد</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">ناتمام / بازگشت</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','deferred')">به تعویق</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
-window.moveActionToday=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;a.status='today';a.scheduledAt=now();a.assignedTo='';a.assignedAt='';t.updated=now();save();render();toast('اقدام به امروز اضافه شد');};
-window.setActionStatus=(projectId,actionId,status)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a)return;a.status=status;a.done=status==='done';if(status!=='today')a.scheduledAt='';if(status!=='delegated'){a.assignedTo='';a.assignedAt='';}t.updated=now();save();render();toast(status==='deferred'?'اقدام به تعویق افتاد':status==='waiting'?'اقدام در انتظار قرار گرفت':'اقدام به پروژه برگشت');};
-window.setProjectDone=id=>{const t=state.tasks.find(x=>x.id===id);if(!t)return;if(!confirm('پروژه تمام شود؟ اقدامات انجام‌نشده نیز از امروز خارج می‌شوند.'))return;t.status='done';t.actions.forEach(a=>{if(!a.done){a.status='backlog';a.scheduledAt='';a.assignedTo='';a.assignedAt='';}});t.updated=now();save();render();};
+<div class="actions">${a&&a.status!=='today'&&a.status!=='tomorrow'&&a.status!=='delegated'?`<button class="iconbtn primary" onclick="moveActionToday('${t.id}','${a.id}')">اقدام بعدی به امروز</button><button class="iconbtn" onclick="moveActionTomorrow('${t.id}','${a.id}')">اقدام بعدی به فردا</button>`:''}<button class="iconbtn" onclick="openProject('${t.id}')">جزئیات و اقدامات</button>${t.status!=='done'?`<button class="iconbtn" onclick="setProjectDone('${t.id}')">اتمام پروژه</button>`:''}<button class="iconbtn danger" onclick="delTask('${t.id}')">حذف</button></div></div>`}
+function todayActions(){return plannedRowsFor(todayKey()).filter(x=>x.action.status==='today');}
+function tomorrowActions(){return plannedRowsFor(tomorrowKey()).filter(x=>x.action.status==='tomorrow');}
+function capacitySummaryHtml(key,label){const limit=capacityFor(key),used=usedCapacity(key),remaining=Math.max(0,limit-used),pct=limit?Math.min(100,Math.round(used/limit*100)):0;return `<div class="capacity-summary"><div><b>${label}</b><span>${used} / ${limit||'—'} واحد</span></div><div class="progress"><span style="width:${pct}%"></span></div><small>${limit?`${remaining} واحد ظرفیت باقی مانده`:'هنوز ظرفیت تعیین نشده است.'}</small></div>`;}
+function todayActionCard(row){const {project,action}=row;return `<div class="item today-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta">${actionWeight(action)} واحد</div></div><span class="badge ${project.priority}" title="${priorityLabel(project.priority)}">${priorityStars(project.priority)}</span></div><div class="actions"><button class="iconbtn primary" onclick="completeTodayAction('${project.id}','${action.id}')">✓ انجام شد</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">ناتمام / بازگشت</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','deferred')">به تعویق</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
+function tomorrowActionCard(row){const {project,action}=row;return `<div class="item tomorrow-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta">${actionWeight(action)} واحد</div></div><span class="badge ${project.priority}">${priorityStars(project.priority)}</span></div><div class="actions"><button class="iconbtn primary" onclick="moveTomorrowToToday('${project.id}','${action.id}')">انتقال به امروز</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">بازگشت به پروژه</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
+window.moveActionToday=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;if(!scheduleAction(t,a,'today',todayKey()))return;save();render();toast('اقدام به امروز اضافه شد');};
+window.moveActionTomorrow=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;if(!scheduleAction(t,a,'tomorrow',tomorrowKey()))return;save();render();toast('اقدام به فردا اضافه شد');};
+window.moveTomorrowToToday=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;if(!scheduleAction(t,a,'today',todayKey()))return;save();render();toast('اقدام به امروز منتقل شد');};
+window.setActionStatus=(projectId,actionId,status)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a)return;a.status=status;a.done=status==='done';if(status!=='today'&&status!=='tomorrow'){a.scheduledAt='';a.plannedFor='';}if(status!=='delegated'){a.assignedTo='';a.assignedAt='';}t.updated=now();save();render();toast(status==='deferred'?'اقدام به تعویق افتاد':status==='waiting'?'اقدام در انتظار قرار گرفت':'اقدام به پروژه برگشت');};
+window.setProjectDone=id=>{const t=state.tasks.find(x=>x.id===id);if(!t)return;if(!confirm('پروژه تمام شود؟ اقدامات انجام‌نشده نیز از امروز خارج می‌شوند.'))return;t.status='done';t.actions.forEach(a=>{if(!a.done){a.status='backlog';a.scheduledAt='';a.plannedFor='';a.assignedTo='';a.assignedAt='';}});t.updated=now();save();render();};
 window.delTask=id=>{if(!confirm('این پروژه حذف شود؟'))return;state.tasks=state.tasks.filter(x=>x.id!==id);save();render();};
 
-window.completeTodayAction=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!t||!a)return;a.done=true;a.status='done';a.scheduledAt='';a.assignedTo='';a.assignedAt='';t.updated=now();pendingCompleteTaskId=projectId;save();showNextActionDialog(t);};
+window.completeTodayAction=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!t||!a)return;a.done=true;a.status='done';a.scheduledAt='';a.plannedFor='';a.assignedTo='';a.assignedAt='';t.updated=now();pendingCompleteTaskId=projectId;save();showNextActionDialog(t);};
 function showNextActionDialog(t){const next=activeAction(t),content=$('#nextActionContent'),buttons=$('#nextActionButtons');if(next&&next.status==='delegated'){content.innerHTML=`<div class="notice">اقدام انجام شد.</div><p>اقدام بعدی پروژه قبلاً به <b>${esc(assigneeLabel(next))}</b> واگذار شده است:</p><div class="active-action"><b>${esc(next.text)}</b></div><p class="meta">این اقدام در تب افراد برای پیگیری باقی می‌ماند.</p>`;buttons.innerHTML=`<button class="btn teal" onclick="leaveNextInProject()">متوجه شدم</button>`;}else if(next){content.innerHTML=`<div class="notice">اقدام انجام شد.</div><p>اقدام بعدی پروژه:</p><div class="active-action"><b>${esc(next.text)}</b></div><p class="meta">اقدام بعدی هم به امروز اضافه شود یا فعلاً در پروژه بماند؟</p>`;buttons.innerHTML=`<button class="btn secondary" onclick="leaveNextInProject()">فعلاً در پروژه بماند</button><button class="btn teal" onclick="keepNextToday()">اقدام بعدی به امروز</button>`;}else{content.innerHTML=`<div class="notice">همه اقدامات ثبت‌شده انجام شدند.</div><p>وضعیت پروژه چیست؟</p>`;buttons.innerHTML=`<button class="btn secondary" onclick="leaveNextInProject()">فعلاً پروژه باز بماند</button><button class="btn gold" onclick="addActionAfterFinish()">اقدام جدید اضافه می‌کنم</button><button class="btn teal" onclick="finishProjectNow()">پروژه تکمیل شد</button>`;}$('#nextActionDialog').showModal();render();}
-window.keepNextToday=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId),a=t&&activeAction(t);if(a){a.status='today';a.scheduledAt=now();t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی به امروز اضافه شد')};
-window.leaveNextInProject=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId),a=t&&activeAction(t);if(a&&a.status!=='delegated'){a.status='backlog';a.scheduledAt='';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی در پروژه ماند')};
+window.keepNextToday=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId),a=t&&activeAction(t);if(a){if(!scheduleAction(t,a,'today',todayKey()))return;t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی به امروز اضافه شد')};
+window.leaveNextInProject=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId),a=t&&activeAction(t);if(a&&a.status!=='delegated'){a.status='backlog';a.scheduledAt='';a.plannedFor='';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی در پروژه ماند')};
 window.finishProjectNow=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId);if(t){t.status='done';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('پروژه تکمیل شد')};
 window.addActionAfterFinish=()=>{let id=pendingCompleteTaskId;$('#nextActionDialog').close();pendingCompleteTaskId=null;openProject(id);setTimeout(()=>$('#editActionText').focus(),100)};
 
 window.openProject=id=>{editingTaskId=id;const t=state.tasks.find(x=>x.id===id);if(!t)return;$('#projectDialogTitle').textContent='جزئیات پروژه';$('#editTitle').value=t.title;$('#editCategory').value=t.category;$('#editPriority').value=t.priority;$('#editDue').value=t.due||'';$('#editNote').value=t.note||'';renderEditActions();$('#projectDialog').showModal();};
-function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><div class="step-tools"><span class="mini status-chip">${actionStatusLabel(a.status)}</span>${a.assignedTo?`<span class="mini assignee-chip">${esc(assigneeLabel(a))}</span>`:''}${!a.done&&a.status!=='today'?`<button class="mini" onclick="moveEditActionToday(${i})">امروز</button>`:''}${!a.done?`<button class="mini" onclick="openAssignDialog('${t.id}','${a.id}')">واگذاری</button>`:''}<button class="mini" onclick="toggleEditDone(${i})">${a.done?'بازگردانی':'انجام شد'}</button><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
+function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row weighted-step ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><label class="weight-field">واحد <input type="number" min="1" max="20" value="${actionWeight(a)}" onchange="editActionWeightChange(${i},this.value)"></label><div class="step-tools"><span class="mini status-chip">${actionStatusLabel(a.status)}</span>${a.assignedTo?`<span class="mini assignee-chip">${esc(assigneeLabel(a))}</span>`:''}${!a.done&&a.status!=='today'&&a.status!=='tomorrow'?`<button class="mini" onclick="moveEditActionToday(${i})">امروز</button><button class="mini" onclick="moveEditActionTomorrow(${i})">فردا</button>`:''}${!a.done?`<button class="mini" onclick="openAssignDialog('${t.id}','${a.id}')">واگذاری</button>`:''}<button class="mini" onclick="toggleEditDone(${i})">${a.done?'بازگردانی':'انجام شد'}</button><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
 window.editActionTextChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].text=v};
-window.toggleEditDone=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];a.done=!a.done;a.status=a.done?'done':'backlog';a.scheduledAt='';if(a.done){a.assignedTo='';a.assignedAt='';}renderEditActions()};
-window.moveEditActionToday=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];a.done=false;a.status='today';a.scheduledAt=now();a.assignedTo='';a.assignedAt='';renderEditActions()};
+window.editActionWeightChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].weight=Math.max(1,Math.min(20,Number(v)||1));};
+window.toggleEditDone=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];a.done=!a.done;a.status=a.done?'done':'backlog';a.scheduledAt='';a.plannedFor='';if(a.done){a.assignedTo='';a.assignedAt='';}renderEditActions()};
+window.moveEditActionToday=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];if(scheduleAction(t,a,'today',todayKey()))renderEditActions()};
+window.moveEditActionTomorrow=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];if(scheduleAction(t,a,'tomorrow',tomorrowKey()))renderEditActions()};
 window.moveEditAction=(i,d)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let j=i+d;if(j<0||j>=t.actions.length)return;[t.actions[i],t.actions[j]]=[t.actions[j],t.actions[i]];renderEditActions()};
 window.removeEditAction=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.actions.splice(i,1);renderEditActions()};
-$('#addEditAction').onclick=()=>{let v=$('#editActionText').value.trim(),t=state.tasks.find(x=>x.id===editingTaskId);if(!v||!t)return;t.actions.push({id:uid(),text:v,done:false,status:'backlog',scheduledAt:'',assignedTo:'',assignedAt:''});$('#editActionText').value='';renderEditActions()};
-$('#editActionText').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addEditAction').click()}});
-$('#closeProject').onclick=()=>{$('#projectDialog').close();editingTaskId=null};
+$('#addEditAction').onclick=()=>{let v=$('#editActionText').value.trim(),t=state.tasks.find(x=>x.id===editingTaskId);if(!v||!t)return;t.actions.push({id:uid(),text:v,done:false,status:'backlog',scheduledAt:'',plannedFor:'',weight:1,assignedTo:'',assignedAt:''});$('#editActionText').value='';renderEditActions()};
 $('#saveProject').onclick=()=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.title=$('#editTitle').value.trim()||t.title;t.category=$('#editCategory').value;t.priority=$('#editPriority').value;t.due=$('#editDue').value;t.note=$('#editNote').value.trim();t.actions=t.actions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim()}));t.updated=now();save();$('#projectDialog').close();editingTaskId=null;render();toast('تغییرات ذخیره شد')};
 
 let todayPickerProjectId=null;
-function pendingActions(project){return (project.actions||[]).filter(action=>!action.done&&action.status!=='today'&&action.status!=='delegated');}
+function pendingActions(project){return (project.actions||[]).filter(action=>!action.done&&action.status!=='today'&&action.status!=='tomorrow'&&action.status!=='delegated');}
 function matchingProjects(query=''){
   const q=query.trim().toLowerCase();
   return state.tasks.filter(project=>project.status!=='done'&&pendingActions(project).length).sort(compareProjects).filter(project=>{
@@ -462,9 +493,39 @@ $('#todayPickerBack').onclick=()=>{todayPickerProjectId=null;$('#todayPickerSear
 $('#todayPickerSearch').oninput=renderTodayPicker;
 $('#addActionToToday').onclick=()=>{todayPickerProjectId=null;$('#todayPickerSearch').value='';renderTodayPicker();$('#todayActionDialog').showModal();setTimeout(()=>$('#todayPickerSearch').focus(),50);};
 $('#closeTodayActionDialog').onclick=()=>$('#todayActionDialog').close();
+let tomorrowPickerProjectId=null;
+function renderTomorrowPicker(){
+  const query=($('#tomorrowPickerSearch')?.value||'').trim().toLowerCase();
+  const projectList=$('#tomorrowProjectPicker'),actionList=$('#tomorrowActionPicker'),empty=$('#tomorrowActionPickerEmpty'),toolbar=$('#tomorrowPickerToolbar'),current=$('#tomorrowPickerCurrent');
+  if(!projectList||!actionList)return;
+  if(tomorrowPickerProjectId){
+    const project=state.tasks.find(x=>x.id===tomorrowPickerProjectId);if(!project){tomorrowPickerProjectId=null;return renderTomorrowPicker();}
+    toolbar.style.display='flex';current.textContent=project.title;projectList.style.display='none';actionList.style.display='flex';
+    const actions=pendingActions(project).filter(a=>!query||a.text.toLowerCase().includes(query)||project.title.toLowerCase().includes(query));
+    actionList.innerHTML=actions.map(a=>`<button class="picker-project" onclick="pickActionTomorrow('${project.id}','${a.id}')"><span><b>${esc(a.text)}</b><small>${actionWeight(a)} واحد</small></span><span>←</span></button>`).join('');empty.style.display=actions.length?'none':'block';
+  }else{
+    toolbar.style.display='none';projectList.style.display='flex';actionList.style.display='none';
+    const projects=state.tasks.filter(t=>t.status!=='done'&&pendingActions(t).length&&(!query||t.title.toLowerCase().includes(query)||pendingActions(t).some(a=>a.text.toLowerCase().includes(query))));
+    projectList.innerHTML=projects.sort(compareProjects).map(t=>`<button class="picker-project" onclick="openTomorrowPickerProject('${t.id}')"><span><b>${esc(t.title)}</b><small>${pendingActions(t).length} اقدام قابل برنامه‌ریزی</small></span><span>←</span></button>`).join('');empty.style.display=projects.length?'none':'block';
+  }
+}
+window.openTomorrowPickerProject=id=>{tomorrowPickerProjectId=id;renderTomorrowPicker();};
+window.pickActionTomorrow=(projectId,actionId)=>{moveActionTomorrow(projectId,actionId);renderTomorrowPicker();};
+$('#tomorrowPickerBack').onclick=()=>{tomorrowPickerProjectId=null;$('#tomorrowPickerSearch').value='';renderTomorrowPicker();};
+$('#tomorrowPickerSearch').oninput=renderTomorrowPicker;
+$('#addActionToTomorrow').onclick=()=>{tomorrowPickerProjectId=null;$('#tomorrowPickerSearch').value='';renderTomorrowPicker();$('#tomorrowActionDialog').showModal();setTimeout(()=>$('#tomorrowPickerSearch').focus(),50);};
+$('#closeTomorrowActionDialog').onclick=()=>$('#tomorrowActionDialog').close();
 
-function renderTasks(){let q=$('#searchTask')?.value?.toLowerCase()||'',f=$('#filterStatus')?.value||'all';let sorted=[...state.tasks].sort(compareProjects);let all=sorted.filter(t=>(f==='all'||t.status===f)&&JSON.stringify(t).toLowerCase().includes(q));$('#backlogList').innerHTML=all.map(projectCard).join('');$('#backlogEmpty').style.display=all.length?'none':'block';let today=todayActions();$('#todayList').innerHTML=today.map(todayActionCard).join('');$('#todayEmpty').style.display=today.length?'none':'block';$('#activeCount').textContent=String(today.length);}
+function renderTasks(){
+  let q=$('#searchTask')?.value?.toLowerCase()||'',f=$('#filterStatus')?.value||'all';let sorted=[...state.tasks].sort(compareProjects);let all=sorted.filter(t=>(f==='all'||t.status===f)&&JSON.stringify(t).toLowerCase().includes(q));$('#backlogList').innerHTML=all.map(projectCard).join('');$('#backlogEmpty').style.display=all.length?'none':'block';
+  let today=todayActions();$('#todayList').innerHTML=today.map(todayActionCard).join('');$('#todayEmpty').style.display=today.length?'none':'block';$('#activeCount').textContent=String(today.length);$('#todayCapacitySummary').innerHTML=capacitySummaryHtml(todayKey(),'ظرفیت امروز');
+  let tomorrow=tomorrowActions();$('#tomorrowList').innerHTML=tomorrow.map(tomorrowActionCard).join('');$('#tomorrowEmpty').style.display=tomorrow.length?'none':'block';$('#tomorrowCount').textContent=String(tomorrow.length);$('#tomorrowCapacitySummary').innerHTML=capacitySummaryHtml(tomorrowKey(),'ظرفیت فردا');
+  const tc=$('#todayCapacity');if(tc&&document.activeElement!==tc)tc.value=capacityFor(todayKey())||'';const tm=$('#tomorrowCapacity');if(tm&&document.activeElement!==tm)tm.value=capacityFor(tomorrowKey())||'';
+}
 $('#searchTask').oninput=renderTasks;$('#filterStatus').onchange=renderTasks;
+function saveCapacity(key,input,label){const value=Math.max(0,Math.round(Number(input.value)||0));state.capacityByDate=state.capacityByDate||{};if(value)state.capacityByDate[key]=value;else delete state.capacityByDate[key];save();renderTasks();toast(value?`ظرفیت ${label}: ${value} واحد`:`ظرفیت ${label} پاک شد`);}
+$('#saveTodayCapacity').onclick=()=>saveCapacity(todayKey(),$('#todayCapacity'),'امروز');
+$('#saveTomorrowCapacity').onclick=()=>saveCapacity(tomorrowKey(),$('#tomorrowCapacity'),'فردا');
 
 let assignTarget=null;
 function delegatedRowsForPerson(personId){
@@ -473,28 +534,25 @@ function delegatedRowsForPerson(personId){
   return rows.sort((a,b)=>Number(a.action.done)-Number(b.action.done)||new Date(a.action.assignedAt||0)-new Date(b.action.assignedAt||0));
 }
 function renderPeople(){
-  const people=state.people||[],list=$('#peopleList'),empty=$('#peopleEmpty');
-  if(!list||!empty)return;
-  list.innerHTML=people.map(person=>{
-    const rows=delegatedRowsForPerson(person.id),open=rows.filter(x=>!x.action.done),done=rows.filter(x=>x.action.done);
-    return `<div class="person-card"><div class="person-head"><div><div class="title">${esc(person.name)}</div><div class="meta">${open.length} اقدام باز • ${done.length} انجام‌شده</div></div><button class="iconbtn danger" onclick="deletePerson('${person.id}')">حذف فرد</button></div>
-      <div class="person-actions">${rows.length?rows.map(({project,action})=>`<div class="delegated-action ${action.done?'done':''}"><div><b>${esc(action.text)}</b><div class="meta">${esc(project.title)} • ${action.done?'انجام‌شده':'در انتظار پیگیری'}</div></div><div class="actions">${!action.done?`<button class="iconbtn primary" onclick="markDelegatedDone('${project.id}','${action.id}')">✓ انجام شد</button><button class="iconbtn" onclick="takeBackAction('${project.id}','${action.id}')">برگشت به من</button>`:''}</div></div>`).join(''):`<div class="empty compact">اقدامی به این فرد محول نشده است.</div>`}</div></div>`;
-  }).join('');
-  empty.style.display=people.length?'none':'block';
+  const people=state.people||[],list=$('#peopleList'),empty=$('#peopleEmpty');if(!list||!empty)return;
+  list.innerHTML=people.map(person=>{const open=delegatedRowsForPerson(person.id).filter(x=>!x.action.done);return `<button class="person-row" onclick="openPersonDetails('${person.id}')"><span class="title">${esc(person.name)}</span><span class="person-count">${open.length} کار محوله</span><span class="person-arrow">‹</span></button>`;}).join('');empty.style.display=people.length?'none':'block';
 }
+function assignedDateLabel(value){return value?persianDateTime(value,true):'تاریخ واگذاری ثبت نشده';}
+window.openPersonDetails=id=>{const person=personById(id);if(!person)return;const rows=delegatedRowsForPerson(id),open=rows.filter(x=>!x.action.done),done=rows.filter(x=>x.action.done);$('#personDetailTitle').textContent=person.name;$('#personDetailMeta').textContent=`${open.length} کار باز • ${done.length} انجام‌شده`;$('#personDetailList').innerHTML=rows.length?rows.map(({project,action})=>`<div class="delegated-action ${action.done?'done':''}"><div><b>${esc(action.text)}</b><div class="meta">واگذار شده: ${esc(assignedDateLabel(action.assignedAt))}</div><div class="meta subtle-project">پروژه: ${esc(project.title)}</div></div><div class="actions">${!action.done?`<button class="iconbtn primary" onclick="markDelegatedDone('${project.id}','${action.id}');openPersonDetails('${person.id}')">✓ انجام شد</button><button class="iconbtn" onclick="takeBackAction('${project.id}','${action.id}');$('#personDetailDialog').close()">برگشت به من</button>`:'<span class="badge">انجام‌شده</span>'}</div></div>`).join(''):'<div class="empty compact">هنوز کاری به این فرد محول نشده است.</div>';$('#deletePersonFromDetail').onclick=()=>{deletePerson(id);if(!personById(id))$('#personDetailDialog').close();};if(!$('#personDetailDialog').open)$('#personDetailDialog').showModal();};
+$('#closePersonDetail').onclick=()=>$('#personDetailDialog').close();
 $('#addPerson').onclick=()=>{const input=$('#personName'),name=input.value.trim();if(!name)return;if((state.people||[]).some(p=>p.name.toLowerCase()===name.toLowerCase()))return alert('این نام قبلاً ثبت شده است.');state.people.push({id:uid(),name,created:now()});input.value='';save();render();toast('فرد اضافه شد');};
 $('#personName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addPerson').click();}});
 window.deletePerson=id=>{const person=personById(id);if(!person)return;const open=delegatedRowsForPerson(id).filter(x=>!x.action.done);if(open.length)return alert(`ابتدا ${open.length} اقدام بازِ ${person.name} را انجام‌شده یا «برگشت به من» کن.`);if(!confirm(`${person.name} از فهرست افراد حذف شود؟`))return;state.people=state.people.filter(p=>p.id!==id);save();render();};
 function renderAssignChoices(){const box=$('#assignPeopleList');if(!box)return;const people=state.people||[];box.innerHTML=people.map(p=>`<button class="picker-project" onclick="assignActionToPerson('${p.id}')"><span><b>${esc(p.name)}</b><small>${delegatedRowsForPerson(p.id).filter(x=>!x.action.done).length} اقدام باز</small></span><span>←</span></button>`).join('');$('#assignPeopleEmpty').style.display=people.length?'none':'block';}
 window.openAssignDialog=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!project||!action||action.done)return;assignTarget={projectId,actionId};$('#assignActionTitle').textContent=action.text;renderAssignChoices();$('#assignDialog').showModal();};
-window.assignActionToPerson=personId=>{if(!assignTarget)return;const project=state.tasks.find(t=>t.id===assignTarget.projectId),action=project?.actions.find(a=>a.id===assignTarget.actionId),person=personById(personId);if(!project||!action||!person)return;action.done=false;action.status='delegated';action.assignedTo=person.id;action.assignedAt=now();action.scheduledAt='';project.updated=now();save();$('#assignDialog').close();const assignedProjectId=assignTarget.projectId;assignTarget=null;render();if(editingTaskId===assignedProjectId)renderEditActions();toast(`اقدام به ${person.name} واگذار شد`);};
+window.assignActionToPerson=personId=>{if(!assignTarget)return;const project=state.tasks.find(t=>t.id===assignTarget.projectId),action=project?.actions.find(a=>a.id===assignTarget.actionId),person=personById(personId);if(!project||!action||!person)return;action.done=false;action.status='delegated';action.assignedTo=person.id;action.assignedAt=now();action.scheduledAt='';action.plannedFor='';project.updated=now();save();$('#assignDialog').close();const assignedProjectId=assignTarget.projectId;assignTarget=null;render();if(editingTaskId===assignedProjectId)renderEditActions();toast(`اقدام به ${person.name} واگذار شد`);};
 $('#closeAssignDialog').onclick=()=>{$('#assignDialog').close();assignTarget=null;};
-window.takeBackAction=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!action)return;action.status='backlog';action.done=false;action.assignedTo='';action.assignedAt='';action.scheduledAt='';project.updated=now();save();render();toast('اقدام دوباره به خودت برگشت');};
-window.markDelegatedDone=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!action)return;action.done=true;action.status='done';action.scheduledAt='';project.updated=now();save();render();toast('اقدام محول‌شده انجام‌شده ثبت شد');};
+window.takeBackAction=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!action)return;action.status='backlog';action.done=false;action.assignedTo='';action.assignedAt='';action.scheduledAt='';action.plannedFor='';project.updated=now();save();render();toast('اقدام دوباره به خودت برگشت');};
+window.markDelegatedDone=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!action)return;action.done=true;action.status='done';action.scheduledAt='';action.plannedFor='';project.updated=now();save();render();toast('اقدام محول‌شده انجام‌شده ثبت شد');};
 
 $('#addIncoming').onclick=()=>{let name=$('#inName').value.trim(),topic=$('#inTopic').value.trim();if(!name&&!topic)return alert('حداقل نام یا موضوع را وارد کن.');state.incoming.unshift({id:uid(),name,topic,priority:$('#inPriority').value,decision:$('#inDecision').value.trim(),delegate:$('#inDelegate').value.trim(),follow:$('#inFollow').value,done:false});['#inName','#inTopic','#inDecision','#inDelegate','#inFollow'].forEach(x=>$(x).value='');save();render();};
 function renderIncoming(){let a=state.incoming;$('#incomingList').innerHTML=a.map(x=>`<div class="item"><div class="item-head"><div><div class="title">${esc(x.name||'بدون نام')} • ${esc(x.topic||'بدون موضوع')}</div><div class="meta">${x.decision?'تصمیم: '+esc(x.decision):'بدون تصمیم'} ${x.delegate?'• ارجاع: '+esc(x.delegate):''} ${x.follow?'• پیگیری: '+esc(x.follow):''}</div></div><span class="badge ${x.priority}">${x.priority}</span></div><div class="actions"><button class="iconbtn" onclick="incomingToTask('${x.id}')">تبدیل به پروژه</button><button class="iconbtn danger" onclick="delIncoming('${x.id}')">حذف</button></div></div>`).join('');$('#incomingEmpty').style.display=a.length?'none':'block';}
-window.incomingToTask=id=>{let x=state.incoming.find(y=>y.id===id);if(!x)return;state.tasks.unshift({id:uid(),title:x.topic||('پیگیری '+x.name),category:'سایر',priority:x.priority,due:x.follow,note:'ورودی از '+x.name+(x.delegate?' • ارجاع پیشنهادی: '+x.delegate:''),actions:x.decision?[{id:uid(),text:x.decision,done:false,status:'backlog',scheduledAt:'',assignedTo:'',assignedAt:''}]:[],status:'backlog',created:now(),updated:now()});save();render();toast('به پروژه‌های جاری منتقل شد')};window.delIncoming=id=>{state.incoming=state.incoming.filter(x=>x.id!==id);save();render();};
+window.incomingToTask=id=>{let x=state.incoming.find(y=>y.id===id);if(!x)return;state.tasks.unshift({id:uid(),title:x.topic||('پیگیری '+x.name),category:'سایر',priority:x.priority,due:x.follow,note:'ورودی از '+x.name+(x.delegate?' • ارجاع پیشنهادی: '+x.delegate:''),actions:x.decision?[{id:uid(),text:x.decision,done:false,status:'backlog',scheduledAt:'',plannedFor:'',weight:1,assignedTo:'',assignedAt:''}]:[],status:'backlog',created:now(),updated:now()});save();render();toast('به پروژه‌های جاری منتقل شد')};window.delIncoming=id=>{state.incoming=state.incoming.filter(x=>x.id!==id);save();render();};
 
 $('#addParking').onclick=()=>{let text=$('#parkText').value.trim();if(!text)return;state.parking.unshift({id:uid(),text});$('#parkText').value='';save();render();};
 function renderParking(){let a=state.parking;$('#parkingList').innerHTML=a.map(x=>`<div class="item"><div class="title">${esc(x.text)}</div><div class="actions"><button class="iconbtn" onclick="parkingToTask('${x.id}')">انتقال به پروژه‌های جاری</button><button class="iconbtn danger" onclick="delParking('${x.id}')">حذف</button></div></div>`).join('');$('#parkingEmpty').style.display=a.length?'none':'block';}
@@ -569,6 +627,10 @@ async function runHealthSuite(){
     const hp={id:'health-person',name:'فرد آزمایشی',created:now()};const ha={id:'health-delegated',text:'اقدام واگذاری',done:false,status:'delegated',scheduledAt:'',assignedTo:hp.id,assignedAt:now()};
     results.push(healthResult('ساختار افراد',Boolean(hp.id&&hp.name),'تعریف فرد فقط با نام و شناسه داخلی انجام شد.'));
     results.push(healthResult('واگذاری و پیگیری اقدام',ha.status==='delegated'&&ha.assignedTo===hp.id&&!ha.done,'اقدام به فرد متصل و در وضعیت واگذار‌شده قرار گرفت.'));
+    const weighted={id:'w',text:'کار وزنی',weight:4,done:false,status:'backlog',plannedFor:''};results.push(healthResult('وزن اقدام',actionWeight(weighted)===4,'وزن هر اقدام مستقل ذخیره و خوانده شد.'));
+    const capState=state.capacityByDate;const existingUsed=usedCapacity(todayKey(),weighted.id);const testLimit=existingUsed+4;state.capacityByDate={...capState,[todayKey()]:testLimit};const capCheck=capacityCheck(weighted,todayKey());results.push(healthResult('ظرفیت روزانه',capCheck.limit===testLimit&&capCheck.weight===4&&capCheck.ok,'کنترل سقف واحد روز فعال است.'));state.capacityByDate=capState;
+    const tomorrowDate=tomorrowKey();results.push(healthResult('برنامه فردا',Boolean(tomorrowDate&&tomorrowDate!==todayKey()),'روز فردا مستقل از امروز برنامه‌ریزی می‌شود.'));
+    results.push(healthResult('تاریخ و ساعت شمسی',persianDateTime(new Date(),true).length>5,'نمایش تاریخ و ساعت با تقویم شمسی فعال است.'));
     const payload={app:'Araz Flow',appVersion:APP_VERSION,schemaVersion:DB_SCHEMA_VERSION,exportedAt:new Date().toISOString(),data:original};
     const parsed=JSON.parse(JSON.stringify(payload));
     results.push(healthResult('ساخت و خواندن پشتیبان',isValidState(parsed.data)&&parsed.schemaVersion===DB_SCHEMA_VERSION,`Schema ${parsed.schemaVersion}`));
@@ -601,7 +663,7 @@ $('#runHealthSuite').onclick=runHealthSuite;
 const clearDiag=$('#clearDiagnostics');if(clearDiag)clearDiag.onclick=()=>{diagnosticEntries=[];try{localStorage.removeItem(DIAG_KEY)}catch{};diagLog('info','گزارش عیب‌یابی پاک شد');};
 const copyDiag=$('#copyDiagnostics');if(copyDiag)copyDiag.onclick=async()=>{const text=diagnosticEntries.map(x=>`[${x.time}] ${x.level.toUpperCase()} — ${x.message}${x.detail?`\n${x.detail}`:''}`).join('\n\n');try{await navigator.clipboard.writeText(text);toast('گزارش عیب‌یابی کپی شد')}catch{alert(text||'گزارشی وجود ندارد')}};
 renderDiagnostics();
-function render(){renderTasks();renderPeople();renderIncoming();renderParking();updateBackupPanel();}renderDraftActions();render();
+function render(){renderTasks();renderPeople();renderIncoming();renderParking();updateBackupPanel();updatePersianClock();}renderDraftActions();render();updatePersianClock();setInterval(updatePersianClock,30000);
 setTimeout(testStorage,400);
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;});
@@ -632,4 +694,4 @@ if('serviceWorker' in navigator){
     .catch(err=>diagLog('warning','ثبت Service Worker ناموفق بود',err));
 }
 }
-initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 001 نگاه کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 002 نگاه کن.');});
