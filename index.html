@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="araz-flow-build" content="011" />
   <meta name="theme-color" content="#0f2747" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -11,12 +12,12 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=008" />
+  <link rel="stylesheet" href="./styles.css?v=011" />
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 010</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.0.0 • Build 011</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="backlog">پروژه‌های جاری</button>
@@ -104,7 +105,7 @@
       <div class="card"><h2>وضعیت اطلاعات فعلی</h2><div class="content"><div id="dataStats" class="row"></div></div></div>
       <div id="healthSuitePanel" class="health-suite" style="display:none"><div class="health-suite-title">نتیجه آزمایش سلامت کامل</div><div id="healthSuiteSummary" class="storage-health checking">هنوز اجرا نشده است.</div><div id="healthSuiteResults" class="health-results"></div><div id="healthSuiteMeta" class="meta" style="margin-top:10px"></div></div>
       <div style="height:16px"></div>
-      <div class="card"><h2>عیب‌یابی Build 010</h2><div class="content">
+      <div class="card"><h2>عیب‌یابی Build 011</h2><div class="content">
         <div class="notice">این بخش خطاهای JavaScript، Promiseها و مراحل آزمایش ذخیره‌سازی را ثبت می‌کند. اگر چیزی گیر کرد، متن این کادر را برای بررسی بفرست.</div>
         <div id="diagnosticStatus" class="storage-health ok">تا این لحظه خطای اجرایی ثبت نشده است.</div>
         <div class="row" style="margin-top:12px"><button class="btn secondary" id="copyDiagnostics" type="button">کپی گزارش</button><button class="btn ghost" id="clearDiagnostics" type="button">پاک کردن گزارش</button></div>
@@ -114,7 +115,7 @@
       <div class="card"><h2>مدیریت نسخه</h2><div class="content">
         <div class="notice">برنامه نسخه منتشرشده روی سرور را بررسی می‌کند. با به‌روزرسانی، اطلاعات پروژه‌ها دست‌نخورده می‌ماند.</div>
         <div class="row" style="margin-top:12px">
-          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">009</span></b></span>
+          <span class="badge">نسخه نصب‌شده: <b>2.0.0 • Build <span id="installedBuildText">011</span></b></span>
           <span class="badge" id="serverBuildBadge">نسخه سرور: در حال بررسی...</span>
         </div>
         <div id="updateStatus" class="storage-health checking" style="margin-top:12px">در حال بررسی نسخه...</div>
@@ -154,6 +155,7 @@
   <p class="meta">پیش از به‌روزرسانی، اطلاعات فعلی به‌صورت اضطراری ذخیره می‌شوند. دیتابیس حذف نخواهد شد.</p>
 </div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
-<script src="./app.js?v=009" defer></script>
+<script>window.__ARAZ_HTML_BUILD__='011';</script>
+<script src="./app.js?v=011" defer></script>
 </body>
 </html>

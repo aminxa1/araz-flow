@@ -9,14 +9,14 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=7;
 const APP_VERSION='2.0.0';
-const APP_BUILD='010';
+const APP_BUILD='011';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],incoming:[],parking:[],notes:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
-const DIAG_KEY='arazFlowDiagnostics010';
+const DIAG_KEY='arazFlowDiagnostics011';
 const DIAG_MAX=80;
 let diagnosticEntries=[];
 function diagnosticSafe(value){
@@ -57,7 +57,8 @@ function withTimeout(promise,ms,label='عملیات'){
 try{diagnosticEntries=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]');if(!Array.isArray(diagnosticEntries))diagnosticEntries=[]}catch{diagnosticEntries=[]}
 window.addEventListener('error',event=>diagLog('error',event.message||'خطای JavaScript',`${event.filename||''}:${event.lineno||0}:${event.colno||0}\n${event.error?.stack||''}`));
 window.addEventListener('unhandledrejection',event=>{const r=event.reason;diagLog('error','Promise بدون مدیریت رد شد',r instanceof Error?`${r.name}: ${r.message}\n${r.stack||''}`:(diagnosticSafe(r)||'بدون جزئیات'));});
-diagLog('info','app.js بارگذاری شد','Build 010');
+window.__ARAZ_APP_BUILD__=APP_BUILD;
+diagLog('info','app.js بارگذاری شد','Build 011');
 function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function isValidState(value){return Boolean(value&&typeof value==='object'&&Array.isArray(value.tasks))}
@@ -163,7 +164,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 009'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Build 011'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -330,6 +331,15 @@ async function applyAvailableUpdate(){
 }
 async function initApp(){
   diagLog('info','راه‌اندازی برنامه شروع شد');
+  const htmlBuild=String(window.__ARAZ_HTML_BUILD__||document.querySelector('meta[name="araz-flow-build"]')?.content||'');
+  if(htmlBuild && htmlBuild!==APP_BUILD){
+    diagLog('error','نسخه ترکیبی از کش بارگذاری شده است',`HTML Build ${htmlBuild} / app.js Build ${APP_BUILD}`);
+    const warning=document.getElementById('runtimeBuildMismatch');
+    if(warning){warning.style.display='block';warning.textContent=`نسخه‌های برنامه هماهنگ نیستند: HTML ${htmlBuild} / JavaScript ${APP_BUILD}. صفحه را دوباره باز کن.`;}
+  }else{
+    diagLog('info','هماهنگی نسخه HTML و JavaScript',`Build ${APP_BUILD}`);
+  }
+
   state=await withTimeout(loadState(),8000,'خواندن دیتابیس هنگام راه‌اندازی');
   diagLog('info','داده اولیه خوانده شد',`پروژه‌ها: ${state?.tasks?.length||0}`);
   normalize();
@@ -499,6 +509,9 @@ async function runHealthSuite(){
     const payload={app:'Araz Flow',appVersion:APP_VERSION,schemaVersion:DB_SCHEMA_VERSION,exportedAt:new Date().toISOString(),data:original};
     const parsed=JSON.parse(JSON.stringify(payload));
     results.push(healthResult('ساخت و خواندن پشتیبان',isValidState(parsed.data)&&parsed.schemaVersion===DB_SCHEMA_VERSION,`Schema ${parsed.schemaVersion}`));
+    const htmlBuild=String(window.__ARAZ_HTML_BUILD__||document.querySelector('meta[name="araz-flow-build"]')?.content||'');
+    const versionConsistent=!htmlBuild||htmlBuild===APP_BUILD;
+    results.push(healthResult('هماهنگی فایل‌های نسخه',versionConsistent,versionConsistent?`HTML و app.js هر دو Build ${APP_BUILD}`:`HTML ${htmlBuild} / app.js ${APP_BUILD}`));
     const storageOk=await testStorage();
     results.push(healthResult('ذخیره‌سازی دو‌لایه',storageOk,storageHealth.message));
     let versionOk=false,versionDetail='';
@@ -550,7 +563,9 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&(Date.now()-lastVersionCheckAt)>15*60*1000)checkForUpdates({silent:true});
 });
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register(`./sw.js?v=${APP_BUILD}`,{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('Service worker registration failed',err));
+  navigator.serviceWorker.register(`./sw.js?v=${APP_BUILD}`,{scope:'./',updateViaCache:'none'})
+    .then(reg=>reg.update().catch(()=>{}))
+    .catch(err=>diagLog('warning','ثبت Service Worker ناموفق بود',err));
 }
 }
-initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی Build 010 نگاه کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی Build 011 نگاه کن.');});
