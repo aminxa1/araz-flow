@@ -1,8 +1,8 @@
 # Changelog
 
-## 2.1.0 — Build 005
+## 2.1.0 — Build 006
 - Fixed the remaining stale HTML build identifier that was still `002` inside Build 004.
-- Synchronized HTML, app.js, asset query versions, Service Worker cache, diagnostics key, and version.json to Build 005.
+- Synchronized HTML, app.js, asset query versions, Service Worker cache, diagnostics key, and version.json to Build 006.
 - Kept automatic mixed-version cache repair enabled.
 - No schema change; Schema 9 remains intact.
 
@@ -31,3 +31,6 @@
 
 ## 2.0.0 — Build 012
 - Stable dual-storage baseline.
+
+- Fixed project editor action weight persistence on iOS by committing values directly from editor fields on Save.
+- Added regression health test for project-editor weight persistence.

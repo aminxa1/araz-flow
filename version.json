@@ -1,7 +1,7 @@
 {
   "app": "Araz Flow",
   "version": "2.1.0",
-  "build": "005",
+  "build": "006",
   "publishedAt": "2026-08-08T18:52:00+03:30",
   "notes": "اصلاح قطعی شناسه HTML که در Build 004 هنوز 002 مانده بود؛ هماهنگ‌سازی شناسه‌های نسخه در HTML، JavaScript، Service Worker و version.json؛ حفظ ترمیم خودکار نسخه ترکیبی."
 }

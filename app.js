@@ -9,14 +9,14 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=9;
 const APP_VERSION='2.1.0';
-const APP_BUILD='005';
+const APP_BUILD='006';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],people:[],incoming:[],parking:[],notes:{},capacityByDate:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
-const DIAG_KEY='arazFlowDiagnostics210005';
+const DIAG_KEY='arazFlowDiagnostics210006';
 const DIAG_MAX=80;
 let diagnosticEntries=[];
 function diagnosticSafe(value){
@@ -58,7 +58,7 @@ try{diagnosticEntries=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]');if(!Array
 window.addEventListener('error',event=>diagLog('error',event.message||'خطای JavaScript',`${event.filename||''}:${event.lineno||0}:${event.colno||0}\n${event.error?.stack||''}`));
 window.addEventListener('unhandledrejection',event=>{const r=event.reason;diagLog('error','Promise بدون مدیریت رد شد',r instanceof Error?`${r.name}: ${r.message}\n${r.stack||''}`:(diagnosticSafe(r)||'بدون جزئیات'));});
 window.__ARAZ_APP_BUILD__=APP_BUILD;
-diagLog('info','app.js بارگذاری شد','Version 2.1.0 • Build 005');
+diagLog('info','app.js بارگذاری شد','Version 2.1.0 • Build 006');
 function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function isValidState(value){return Boolean(value&&typeof value==='object'&&Array.isArray(value.tasks))}
@@ -200,7 +200,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 005'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 006'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -492,7 +492,7 @@ window.finishProjectNow=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTas
 window.addActionAfterFinish=()=>{let id=pendingCompleteTaskId;$('#nextActionDialog').close();pendingCompleteTaskId=null;openProject(id);setTimeout(()=>$('#editActionText').focus(),100)};
 
 window.openProject=id=>{editingTaskId=id;const t=state.tasks.find(x=>x.id===id);if(!t)return;$('#projectDialogTitle').textContent='جزئیات پروژه';$('#editTitle').value=t.title;$('#editCategory').value=t.category;$('#editPriority').value=t.priority;$('#editDue').value=t.due||'';$('#editNote').value=t.note||'';renderEditActions();$('#projectDialog').showModal();};
-function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row weighted-step ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><label class="weight-field">واحد <input class="numeric-input" type="text" inputmode="numeric" pattern="[0-9۰-۹٠-٩]*" value="${actionWeight(a)}" onchange="editActionWeightChange(${i},this.value)"></label><div class="step-tools"><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
+function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row weighted-step ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><label class="weight-field">واحد <input class="numeric-input" type="text" inputmode="numeric" pattern="[0-9۰-۹٠-٩]*" value="${actionWeight(a)}" oninput="editActionWeightChange(${i},this.value)"></label><div class="step-tools"><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
 window.editActionTextChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].text=v};
 window.editActionWeightChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].weight=Math.max(1,Math.min(20,parseLocalizedNumber(v)||1));};
 window.toggleEditDone=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];a.done=!a.done;a.status=a.done?'done':'backlog';a.scheduledAt='';a.plannedFor='';if(a.done){a.assignedTo='';a.assignedAt='';}renderEditActions()};
@@ -501,7 +501,24 @@ window.moveEditActionTomorrow=i=>{let t=state.tasks.find(x=>x.id===editingTaskId
 window.moveEditAction=(i,d)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let j=i+d;if(j<0||j>=t.actions.length)return;[t.actions[i],t.actions[j]]=[t.actions[j],t.actions[i]];renderEditActions()};
 window.removeEditAction=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.actions.splice(i,1);renderEditActions()};
 $('#addEditAction').onclick=()=>{let v=$('#editActionText').value.trim(),t=state.tasks.find(x=>x.id===editingTaskId);if(!v||!t)return;t.actions.push({id:uid(),text:v,done:false,status:'backlog',scheduledAt:'',plannedFor:'',weight:1,assignedTo:'',assignedAt:''});$('#editActionText').value='';renderEditActions()};
-$('#saveProject').onclick=()=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.title=$('#editTitle').value.trim()||t.title;t.category=$('#editCategory').value;t.priority=$('#editPriority').value;t.due=$('#editDue').value;t.note=$('#editNote').value.trim();t.actions=t.actions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim()}));t.updated=now();save();$('#projectDialog').close();editingTaskId=null;render();toast('تغییرات ذخیره شد')};
+function applyProjectEditorActionValues(action,textValue,weightValue){
+  if(!action)return action;
+  action.text=String(textValue??action.text??'').trim();
+  action.weight=Math.max(1,Math.min(20,parseLocalizedNumber(weightValue)||1));
+  return action;
+}
+function commitProjectEditorActions(t){
+  if(!t)return;
+  const rows=[...document.querySelectorAll('#editActions .weighted-step')];
+  rows.forEach((row,i)=>{
+    const action=t.actions[i];if(!action)return;
+    const inputs=row.querySelectorAll('input');
+    const textInput=inputs[0],weightInput=inputs[1];
+    applyProjectEditorActionValues(action,textInput?.value,weightInput?.value);
+    if(weightInput)weightInput.value=String(action.weight);
+  });
+}
+$('#saveProject').onclick=()=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;commitProjectEditorActions(t);t.title=$('#editTitle').value.trim()||t.title;t.category=$('#editCategory').value;t.priority=$('#editPriority').value;t.due=$('#editDue').value;t.note=$('#editNote').value.trim();t.actions=t.actions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim(),weight:actionWeight(a)}));t.updated=now();save();$('#projectDialog').close();editingTaskId=null;render();toast('تغییرات ذخیره شد')};
 $('#closeProject').onclick=()=>{$('#projectDialog').close();editingTaskId=null;render();};
 
 let todayPickerProjectId=null;
@@ -683,6 +700,7 @@ async function runHealthSuite(){
     const weighted={id:'w',text:'کار وزنی',weight:4,done:false,status:'backlog',plannedFor:''};results.push(healthResult('وزن اقدام',actionWeight(weighted)===4,'وزن هر اقدام مستقل ذخیره و خوانده شد.'));
     const capState=state.capacityByDate;const existingUsed=usedCapacity(todayKey(),weighted.id);const testLimit=existingUsed+4;state.capacityByDate={...capState,[todayKey()]:testLimit};const capCheck=capacityCheck(weighted,todayKey());results.push(healthResult('ظرفیت روزانه',capCheck.limit===testLimit&&capCheck.weight===4&&capCheck.ok,'کنترل سقف واحد روز فعال است.'));state.capacityByDate=capState;
     const digitOk=parseLocalizedNumber('۱۲')===12&&parseLocalizedNumber('١٥')===15;results.push(healthResult('ورودی عدد فارسی',digitOk,'اعداد فارسی و عربی به عدد استاندارد تبدیل می‌شوند.'));
+    const editWeightProbe={id:'edit-weight-probe',text:'آزمایش',weight:1};applyProjectEditorActionValues(editWeightProbe,'آزمایش','۷');results.push(healthResult('ذخیره وزن در ویرایش پروژه',editWeightProbe.weight===7,'وزن مستقیماً از فیلد ویرایش خوانده و در اقدام ثبت می‌شود.'));
     const plannedDone={id:'cap-done',text:'کار انجام‌شده امروز',weight:3,done:true,status:'done',plannedFor:todayKey()};const plannedDelegated={id:'cap-delegated',text:'کار واگذارشده امروز',weight:2,done:false,status:'delegated',plannedFor:todayKey(),assignedTo:'x',assignedAt:now()};const capProbe={id:'cap-project',title:'probe',actions:[plannedDone,plannedDelegated]};const oldTasks=state.tasks;state.tasks=[...oldTasks,capProbe];const retained=usedCapacity(todayKey())>=5;state.tasks=oldTasks;results.push(healthResult('حفظ مصرف ظرفیت پس از انجام/واگذاری',retained,'کار برنامه‌ریزی‌شده پس از انجام یا واگذاری همچنان از ظرفیت همان روز مصرف می‌کند.'));
     const tomorrowDate=tomorrowKey();results.push(healthResult('برنامه فردا',Boolean(tomorrowDate&&tomorrowDate!==todayKey()),'روز فردا مستقل از امروز برنامه‌ریزی می‌شود.'));
     results.push(healthResult('تاریخ و ساعت شمسی',persianDateTime(new Date(),true).length>5,'نمایش تاریخ و ساعت با تقویم شمسی فعال است.'));
@@ -749,4 +767,4 @@ if('serviceWorker' in navigator){
     .catch(err=>diagLog('warning','ثبت Service Worker ناموفق بود',err));
 }
 }
-initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 005 نگاه کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 006 نگاه کن.');});
