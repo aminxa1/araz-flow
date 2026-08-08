@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 — Build 005
+- Fixed the remaining stale HTML build identifier that was still `002` inside Build 004.
+- Synchronized HTML, app.js, asset query versions, Service Worker cache, diagnostics key, and version.json to Build 005.
+- Kept automatic mixed-version cache repair enabled.
+- No schema change; Schema 9 remains intact.
+
 ## 2.1.0 — Build 004
 - Fixed stale HTML build meta that incorrectly remained on Build 002 in Build 003.
 - Added automatic mixed-version recovery: clear Araz Flow caches, unregister service workers, and controlled reload.

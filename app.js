@@ -9,14 +9,14 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=9;
 const APP_VERSION='2.1.0';
-const APP_BUILD='004';
+const APP_BUILD='005';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],people:[],incoming:[],parking:[],notes:{},capacityByDate:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
-const DIAG_KEY='arazFlowDiagnostics210003';
+const DIAG_KEY='arazFlowDiagnostics210005';
 const DIAG_MAX=80;
 let diagnosticEntries=[];
 function diagnosticSafe(value){
@@ -58,7 +58,7 @@ try{diagnosticEntries=JSON.parse(localStorage.getItem(DIAG_KEY)||'[]');if(!Array
 window.addEventListener('error',event=>diagLog('error',event.message||'خطای JavaScript',`${event.filename||''}:${event.lineno||0}:${event.colno||0}\n${event.error?.stack||''}`));
 window.addEventListener('unhandledrejection',event=>{const r=event.reason;diagLog('error','Promise بدون مدیریت رد شد',r instanceof Error?`${r.name}: ${r.message}\n${r.stack||''}`:(diagnosticSafe(r)||'بدون جزئیات'));});
 window.__ARAZ_APP_BUILD__=APP_BUILD;
-diagLog('info','app.js بارگذاری شد','Version 2.1.0 • Build 002');
+diagLog('info','app.js بارگذاری شد','Version 2.1.0 • Build 005');
 function safeParse(value){try{return value?JSON.parse(value):null}catch{return null}}
 function clone(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function isValidState(value){return Boolean(value&&typeof value==='object'&&Array.isArray(value.tasks))}
@@ -200,7 +200,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 004'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 005'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -212,7 +212,7 @@ function save(options={}){
   changesSinceSnapshot++;
 
   // حیاتی: نسخه ایمنی را همین لحظه و به‌صورت همگام می‌نویسیم.
-  // از Build 004 به بعد نوشتن localStorage همگام انجام می‌شود و اگر کاربر
+  // از Build 005 به بعد نوشتن localStorage همگام انجام می‌شود و اگر کاربر
   // بلافاصله صفحه را می‌بست، مرورگر ممکن بود پیش از اجرای صف، صفحه را نابود کند.
   let immediateLocalOk=false;
   try{
@@ -749,4 +749,4 @@ if('serviceWorker' in navigator){
     .catch(err=>diagLog('warning','ثبت Service Worker ناموفق بود',err));
 }
 }
-initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 004 نگاه کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 005 نگاه کن.');});

@@ -1,9 +1,9 @@
-# Araz Flow 2.1.0 — Build 004
+# Araz Flow 2.1.0 — Build 005
 
 بیلد یکپارچگی نسخه و ترمیم خودکار کش.
 
-- اصلاح meta نسخه HTML از مقدار اشتباه Build 002 به Build 004
-- هماهنگ‌سازی کامل HTML، app.js، assets و version.json روی Build 004
+- اصلاح قطعی شناسه HTML از مقدار اشتباه Build 002 به Build 005
+- هماهنگ‌سازی کامل HTML، app.js، assets، Service Worker و version.json روی Build 005
 - تشخیص نسخه ترکیبی در زمان راه‌اندازی
 - پاک‌سازی خودکار کش‌های Araz Flow و unregister کردن Service Worker در صورت mismatch
 - reload کنترل‌شده فقط یک‌بار، با guard برای جلوگیری از حلقه بی‌نهایت
