@@ -12,12 +12,12 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="./styles.css?v=210002" />
+  <link rel="stylesheet" href="./styles.css?v=210003" />
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.1.0 • Build 002</div><div class="persian-clock" id="persianClock">در حال خواندن تاریخ…</div></div>
+    <div><div class="brand">Araz Flow</div><div class="sub">مدیریت توجه، نه فقط مدیریت زمان</div><div class="version">نسخه 2.1.0 • Build 003</div><div class="persian-clock" id="persianClock">در حال خواندن تاریخ…</div></div>
     <nav class="tabs no-print">
       <button class="tab active" data-tab="today">امروز</button>
       <button class="tab" data-tab="tomorrow">فردا</button>
@@ -33,7 +33,7 @@
     <section id="today" class="section active">
       <div class="hero"><div><strong>امروز فقط اقدام‌ها را ببین</strong><small>پروژه‌ها در پس‌زمینه می‌مانند؛ اینجا فقط قدم‌هایی دیده می‌شوند که قرار است امروز انجام بدهی.</small></div><div><div class="count" id="activeCount">۰</div><small>اقدام امروز</small></div></div>
       <div class="grid">
-        <div class="card"><h2>اقدامات امروز</h2><div class="content"><div class="capacity-editor"><label>ظرفیت امروز (واحد)</label><div><input id="todayCapacity" type="number" min="1" max="200" placeholder="مثلاً ۱۵"><button class="btn secondary" id="saveTodayCapacity" type="button">ثبت ظرفیت</button></div></div><div id="todayCapacitySummary"></div><button class="btn teal no-print" id="addActionToToday">افزودن اقدام به امروز</button><div style="height:12px"></div><div id="todayList" class="list"></div><div class="empty" id="todayEmpty">هنوز اقدامی برای امروز انتخاب نشده است.</div></div></div>
+        <div class="card"><h2>اقدامات امروز</h2><div class="content"><div class="capacity-editor"><label>ظرفیت امروز (واحد)</label><div><input id="todayCapacity" class="numeric-input" type="text" inputmode="numeric" pattern="[0-9۰-۹٠-٩]*" placeholder="مثلاً ۱۵"><button class="btn secondary" id="saveTodayCapacity" type="button">ثبت ظرفیت</button></div></div><div id="todayCapacitySummary"></div><button class="btn teal no-print" id="addActionToToday">افزودن اقدام به امروز</button><div style="height:12px"></div><div id="todayList" class="list"></div><div class="empty" id="todayEmpty">هنوز اقدامی برای امروز انتخاب نشده است.</div></div></div>
         <div class="card"><h2>کنترل توجه امروز</h2><div class="content">
           <div class="field"><label>تمرکز اصلی امروز روی چیست؟</label><textarea id="focusText" placeholder="فقط یک جمله روشن..."></textarea></div>
           <div style="height:12px"></div><button class="brain-btn" id="brainLock">مغزم قفل کرده</button>
@@ -50,7 +50,7 @@
 
     <section id="tomorrow" class="section">
       <div class="hero"><div><strong>برنامه فردا</strong><small>آخر شب فقط اقدام‌های مشخص را بچین؛ ظرفیت فردا جلوی خوش‌بینی بی‌حساب را می‌گیرد.</small></div><div><div class="count" id="tomorrowCount">۰</div><small>اقدام فردا</small></div></div>
-      <div class="card"><h2>اقدامات فردا</h2><div class="content"><div class="capacity-editor"><label>ظرفیت فردا (واحد)</label><div><input id="tomorrowCapacity" type="number" min="1" max="200" placeholder="مثلاً ۱۵"><button class="btn secondary" id="saveTomorrowCapacity" type="button">ثبت ظرفیت</button></div></div><div id="tomorrowCapacitySummary"></div><button class="btn teal" id="addActionToTomorrow" type="button">افزودن اقدام به فردا</button><div style="height:12px"></div><div id="tomorrowList" class="list"></div><div class="empty" id="tomorrowEmpty">هنوز اقدامی برای فردا انتخاب نشده است.</div></div></div>
+      <div class="card"><h2>اقدامات فردا</h2><div class="content"><div class="capacity-editor"><label>ظرفیت فردا (واحد)</label><div><input id="tomorrowCapacity" class="numeric-input" type="text" inputmode="numeric" pattern="[0-9۰-۹٠-٩]*" placeholder="مثلاً ۱۵"><button class="btn secondary" id="saveTomorrowCapacity" type="button">ثبت ظرفیت</button></div></div><div id="tomorrowCapacitySummary"></div><button class="btn teal" id="addActionToTomorrow" type="button">افزودن اقدام به فردا</button><div style="height:12px"></div><div id="tomorrowList" class="list"></div><div class="empty" id="tomorrowEmpty">هنوز اقدامی برای فردا انتخاب نشده است.</div></div></div>
     </section>
 
     <section id="backlog" class="section">
@@ -125,7 +125,7 @@
       <div class="card"><h2>وضعیت اطلاعات فعلی</h2><div class="content"><div id="dataStats" class="row"></div></div></div>
       <div id="healthSuitePanel" class="health-suite" style="display:none"><div class="health-suite-title">نتیجه آزمایش سلامت کامل</div><div id="healthSuiteSummary" class="storage-health checking">هنوز اجرا نشده است.</div><div id="healthSuiteResults" class="health-results"></div><div id="healthSuiteMeta" class="meta" style="margin-top:10px"></div></div>
       <div style="height:16px"></div>
-      <div class="card"><h2>عیب‌یابی 2.1.0 • Build 002</h2><div class="content">
+      <div class="card"><h2>عیب‌یابی 2.1.0 • Build 003</h2><div class="content">
         <div class="notice">این بخش خطاهای JavaScript، Promiseها و مراحل آزمایش ذخیره‌سازی را ثبت می‌کند. اگر چیزی گیر کرد، متن این کادر را برای بررسی بفرست.</div>
         <div id="diagnosticStatus" class="storage-health ok">تا این لحظه خطای اجرایی ثبت نشده است.</div>
         <div class="row" style="margin-top:12px"><button class="btn secondary" id="copyDiagnostics" type="button">کپی گزارش</button><button class="btn ghost" id="clearDiagnostics" type="button">پاک کردن گزارش</button></div>
@@ -135,7 +135,7 @@
       <div class="card"><h2>مدیریت نسخه</h2><div class="content">
         <div class="notice">برنامه نسخه منتشرشده روی سرور را بررسی می‌کند. با به‌روزرسانی، اطلاعات پروژه‌ها دست‌نخورده می‌ماند.</div>
         <div class="row" style="margin-top:12px">
-          <span class="badge">نسخه نصب‌شده: <b>2.1.0 • Build <span id="installedBuildText">002</span></b></span>
+          <span class="badge">نسخه نصب‌شده: <b>2.1.0 • Build <span id="installedBuildText">003</span></b></span>
           <span class="badge" id="serverBuildBadge">نسخه سرور: در حال بررسی...</span>
         </div>
         <div id="updateStatus" class="storage-health checking" style="margin-top:12px">در حال بررسی نسخه...</div>
@@ -190,6 +190,6 @@
 </div><div class="dialog-actions"><button class="btn secondary" id="updateLater">بعداً</button><button class="btn teal" id="updateNow">به‌روزرسانی الآن</button></div></dialog>
 <div class="toast" id="toast"></div>
 <script>window.__ARAZ_HTML_BUILD__='002';</script>
-<script src="./app.js?v=210002" defer></script>
+<script src="./app.js?v=210003" defer></script>
 </body>
 </html>

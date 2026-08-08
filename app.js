@@ -9,14 +9,14 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=9;
 const APP_VERSION='2.1.0';
-const APP_BUILD='002';
+const APP_BUILD='003';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],people:[],incoming:[],parking:[],notes:{},capacityByDate:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
 let changesSinceSnapshot=0;
 let lastSnapshotAt=0;
 let storageHealth={status:'checking',message:'در حال بررسی ذخیره‌سازی...'};
-const DIAG_KEY='arazFlowDiagnostics210002';
+const DIAG_KEY='arazFlowDiagnostics210003';
 const DIAG_MAX=80;
 let diagnosticEntries=[];
 function diagnosticSafe(value){
@@ -200,7 +200,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 002'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 003'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -313,9 +313,22 @@ function persianDateTime(value=new Date(),withTime=true){
 }
 function updatePersianClock(){const el=$('#persianClock');if(el)el.textContent=persianDateTime(new Date(),true)}
 function actionWeight(action){const n=Number(action?.weight);return Number.isFinite(n)&&n>0?Math.round(n):1}
+function normalizeDigits(value=''){
+  return String(value)
+    .replace(/[۰-۹]/g,ch=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(ch)))
+    .replace(/[٠-٩]/g,ch=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(ch)));
+}
+function parseLocalizedNumber(value){
+  const clean=normalizeDigits(value).replace(/[^0-9]/g,'');
+  const n=Number(clean);return Number.isFinite(n)?n:0;
+}
+function normalizeNumericInput(input){
+  if(!input)return 0;const clean=normalizeDigits(input.value).replace(/[^0-9]/g,'');input.value=clean;return parseLocalizedNumber(clean);
+}
 function capacityFor(key){const n=Number(state?.capacityByDate?.[key]);return Number.isFinite(n)&&n>0?Math.round(n):0}
 function plannedRowsFor(key){const rows=[];state.tasks.forEach(project=>(project.actions||[]).forEach(action=>{if(!action.done&&action.plannedFor===key&&(action.status==='today'||action.status==='tomorrow'))rows.push({project,action});}));return rows}
-function usedCapacity(key,excludeActionId=''){return plannedRowsFor(key).filter(x=>x.action.id!==excludeActionId).reduce((sum,x)=>sum+actionWeight(x.action),0)}
+function capacityRowsFor(key){const rows=[];state.tasks.forEach(project=>(project.actions||[]).forEach(action=>{if(action.plannedFor===key&&['today','tomorrow','done','delegated'].includes(action.status))rows.push({project,action});}));return rows}
+function usedCapacity(key,excludeActionId=''){return capacityRowsFor(key).filter(x=>x.action.id!==excludeActionId).reduce((sum,x)=>sum+actionWeight(x.action),0)}
 function capacityCheck(action,key){const limit=capacityFor(key),used=usedCapacity(key,action?.id),weight=actionWeight(action);return {limit,used,weight,ok:limit>0&&(used+weight)<=limit,remaining:Math.max(0,limit-used)};}
 function scheduleAction(project,action,status,key){
   const check=capacityCheck(action,key);
@@ -409,8 +422,8 @@ async function initApp(){
 
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));$$('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active');render();});
 
-function renderDraftActions(){const box=$('#newActions');box.innerHTML=draftActions.map((a,i)=>`<div class="step-row weighted-step"><span class="step-num">${i+1}</span><input value="${esc(a.text)}" oninput="updateDraftAction(${i},this.value)"><label class="weight-field">واحد <input type="number" min="1" max="20" value="${actionWeight(a)}" onchange="updateDraftWeight(${i},this.value)"></label><div class="step-tools"><button class="mini" onclick="moveDraft(${i},-1)">↑</button><button class="mini" onclick="moveDraft(${i},1)">↓</button><button class="mini" onclick="removeDraft(${i})">حذف</button></div></div>`).join('');}
-window.updateDraftAction=(i,v)=>{draftActions[i].text=v};window.updateDraftWeight=(i,v)=>{draftActions[i].weight=Math.max(1,Math.min(20,Number(v)||1));};window.removeDraft=i=>{draftActions.splice(i,1);renderDraftActions()};window.moveDraft=(i,d)=>{let j=i+d;if(j<0||j>=draftActions.length)return;[draftActions[i],draftActions[j]]=[draftActions[j],draftActions[i]];renderDraftActions()};
+function renderDraftActions(){const box=$('#newActions');box.innerHTML=draftActions.map((a,i)=>`<div class="step-row weighted-step"><span class="step-num">${i+1}</span><input value="${esc(a.text)}" oninput="updateDraftAction(${i},this.value)"><label class="weight-field">واحد <input class="numeric-input" type="text" inputmode="numeric" pattern="[0-9۰-۹٠-٩]*" value="${actionWeight(a)}" onchange="updateDraftWeight(${i},this.value)"></label><div class="step-tools"><button class="mini" onclick="moveDraft(${i},-1)">↑</button><button class="mini" onclick="moveDraft(${i},1)">↓</button><button class="mini" onclick="removeDraft(${i})">حذف</button></div></div>`).join('');}
+window.updateDraftAction=(i,v)=>{draftActions[i].text=v};window.updateDraftWeight=(i,v)=>{draftActions[i].weight=Math.max(1,Math.min(20,parseLocalizedNumber(v)||1));};window.removeDraft=i=>{draftActions.splice(i,1);renderDraftActions()};window.moveDraft=(i,d)=>{let j=i+d;if(j<0||j>=draftActions.length)return;[draftActions[i],draftActions[j]]=[draftActions[j],draftActions[i]];renderDraftActions()};
 $('#addNewAction').onclick=()=>{let v=$('#newActionText').value.trim();if(!v)return;draftActions.push({id:uid(),text:v,done:false,weight:1});$('#newActionText').value='';renderDraftActions()};
 $('#newActionText').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#addNewAction').click()}});
 
@@ -431,8 +444,8 @@ ${a?`<div class="active-action"><b>اقدام بعدی:</b> ${esc(a.text)} <span
 function todayActions(){return plannedRowsFor(todayKey()).filter(x=>x.action.status==='today');}
 function tomorrowActions(){return plannedRowsFor(tomorrowKey()).filter(x=>x.action.status==='tomorrow');}
 function capacitySummaryHtml(key,label){const limit=capacityFor(key),used=usedCapacity(key),remaining=Math.max(0,limit-used),pct=limit?Math.min(100,Math.round(used/limit*100)):0;return `<div class="capacity-summary"><div><b>${label}</b><span>${used} / ${limit||'—'} واحد</span></div><div class="progress"><span style="width:${pct}%"></span></div><small>${limit?`${remaining} واحد ظرفیت باقی مانده`:'هنوز ظرفیت تعیین نشده است.'}</small></div>`;}
-function todayActionCard(row){const {project,action}=row;return `<div class="item today-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta">${actionWeight(action)} واحد</div></div><span class="badge ${project.priority}" title="${priorityLabel(project.priority)}">${priorityStars(project.priority)}</span></div><div class="actions"><button class="iconbtn primary" onclick="completeTodayAction('${project.id}','${action.id}')">✓ انجام شد</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">ناتمام / بازگشت</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','deferred')">به تعویق</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
-function tomorrowActionCard(row){const {project,action}=row;return `<div class="item tomorrow-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta">${actionWeight(action)} واحد</div></div><span class="badge ${project.priority}">${priorityStars(project.priority)}</span></div><div class="actions"><button class="iconbtn primary" onclick="moveTomorrowToToday('${project.id}','${action.id}')">انتقال به امروز</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">بازگشت به پروژه</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
+function todayActionCard(row){const {project,action}=row;return `<div class="item today-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta">${actionWeight(action)} واحد</div><div class="project-context">پروژه: ${esc(project.title)}</div></div><span class="badge ${project.priority}" title="${priorityLabel(project.priority)}">${priorityStars(project.priority)}</span></div><div class="actions"><button class="iconbtn primary" onclick="completeTodayAction('${project.id}','${action.id}')">✓ انجام شد</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">ناتمام / بازگشت</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','deferred')">به تعویق</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
+function tomorrowActionCard(row){const {project,action}=row;return `<div class="item tomorrow-action-card"><div class="item-head"><div><div class="title">${esc(action.text)}</div><div class="meta">${actionWeight(action)} واحد</div><div class="project-context">پروژه: ${esc(project.title)}</div></div><span class="badge ${project.priority}">${priorityStars(project.priority)}</span></div><div class="actions"><button class="iconbtn primary" onclick="moveTomorrowToToday('${project.id}','${action.id}')">انتقال به امروز</button><button class="iconbtn" onclick="setActionStatus('${project.id}','${action.id}','backlog')">بازگشت به پروژه</button><button class="iconbtn" onclick="openAssignDialog('${project.id}','${action.id}')">واگذاری</button></div></div>`}
 window.moveActionToday=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;if(!scheduleAction(t,a,'today',todayKey()))return;save();render();toast('اقدام به امروز اضافه شد');};
 window.moveActionTomorrow=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;if(!scheduleAction(t,a,'tomorrow',tomorrowKey()))return;save();render();toast('اقدام به فردا اضافه شد');};
 window.moveTomorrowToToday=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!a||a.done)return;if(!scheduleAction(t,a,'today',todayKey()))return;save();render();toast('اقدام به امروز منتقل شد');};
@@ -440,7 +453,7 @@ window.setActionStatus=(projectId,actionId,status)=>{const t=state.tasks.find(x=
 window.setProjectDone=id=>{const t=state.tasks.find(x=>x.id===id);if(!t)return;if(!confirm('پروژه تمام شود؟ اقدامات انجام‌نشده نیز از امروز خارج می‌شوند.'))return;t.status='done';t.actions.forEach(a=>{if(!a.done){a.status='backlog';a.scheduledAt='';a.plannedFor='';a.assignedTo='';a.assignedAt='';}});t.updated=now();save();render();};
 window.delTask=id=>{if(!confirm('این پروژه حذف شود؟'))return;state.tasks=state.tasks.filter(x=>x.id!==id);save();render();};
 
-window.completeTodayAction=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!t||!a)return;a.done=true;a.status='done';a.scheduledAt='';a.plannedFor='';a.assignedTo='';a.assignedAt='';t.updated=now();pendingCompleteTaskId=projectId;save();showNextActionDialog(t);};
+window.completeTodayAction=(projectId,actionId)=>{const t=state.tasks.find(x=>x.id===projectId),a=t?.actions.find(x=>x.id===actionId);if(!t||!a)return;const planned=a.plannedFor||todayKey();a.done=true;a.status='done';a.scheduledAt='';a.plannedFor=planned;a.assignedTo='';a.assignedAt='';t.updated=now();pendingCompleteTaskId=projectId;save();showNextActionDialog(t);};
 function showNextActionDialog(t){const next=activeAction(t),content=$('#nextActionContent'),buttons=$('#nextActionButtons');if(next&&next.status==='delegated'){content.innerHTML=`<div class="notice">اقدام انجام شد.</div><p>اقدام بعدی پروژه قبلاً به <b>${esc(assigneeLabel(next))}</b> واگذار شده است:</p><div class="active-action"><b>${esc(next.text)}</b></div><p class="meta">این اقدام در تب افراد برای پیگیری باقی می‌ماند.</p>`;buttons.innerHTML=`<button class="btn teal" onclick="leaveNextInProject()">متوجه شدم</button>`;}else if(next){content.innerHTML=`<div class="notice">اقدام انجام شد.</div><p>اقدام بعدی پروژه:</p><div class="active-action"><b>${esc(next.text)}</b></div><p class="meta">اقدام بعدی هم به امروز اضافه شود یا فعلاً در پروژه بماند؟</p>`;buttons.innerHTML=`<button class="btn secondary" onclick="leaveNextInProject()">فعلاً در پروژه بماند</button><button class="btn teal" onclick="keepNextToday()">اقدام بعدی به امروز</button>`;}else{content.innerHTML=`<div class="notice">همه اقدامات ثبت‌شده انجام شدند.</div><p>وضعیت پروژه چیست؟</p>`;buttons.innerHTML=`<button class="btn secondary" onclick="leaveNextInProject()">فعلاً پروژه باز بماند</button><button class="btn gold" onclick="addActionAfterFinish()">اقدام جدید اضافه می‌کنم</button><button class="btn teal" onclick="finishProjectNow()">پروژه تکمیل شد</button>`;}$('#nextActionDialog').showModal();render();}
 window.keepNextToday=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId),a=t&&activeAction(t);if(a){if(!scheduleAction(t,a,'today',todayKey()))return;t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی به امروز اضافه شد')};
 window.leaveNextInProject=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTaskId),a=t&&activeAction(t);if(a&&a.status!=='delegated'){a.status='backlog';a.scheduledAt='';a.plannedFor='';t.updated=now()}save();$('#nextActionDialog').close();pendingCompleteTaskId=null;render();toast('اقدام بعدی در پروژه ماند')};
@@ -448,9 +461,9 @@ window.finishProjectNow=()=>{let t=state.tasks.find(x=>x.id===pendingCompleteTas
 window.addActionAfterFinish=()=>{let id=pendingCompleteTaskId;$('#nextActionDialog').close();pendingCompleteTaskId=null;openProject(id);setTimeout(()=>$('#editActionText').focus(),100)};
 
 window.openProject=id=>{editingTaskId=id;const t=state.tasks.find(x=>x.id===id);if(!t)return;$('#projectDialogTitle').textContent='جزئیات پروژه';$('#editTitle').value=t.title;$('#editCategory').value=t.category;$('#editPriority').value=t.priority;$('#editDue').value=t.due||'';$('#editNote').value=t.note||'';renderEditActions();$('#projectDialog').showModal();};
-function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row weighted-step ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><label class="weight-field">واحد <input type="number" min="1" max="20" value="${actionWeight(a)}" onchange="editActionWeightChange(${i},this.value)"></label><div class="step-tools"><span class="mini status-chip">${actionStatusLabel(a.status)}</span>${a.assignedTo?`<span class="mini assignee-chip">${esc(assigneeLabel(a))}</span>`:''}${!a.done&&a.status!=='today'&&a.status!=='tomorrow'?`<button class="mini" onclick="moveEditActionToday(${i})">امروز</button><button class="mini" onclick="moveEditActionTomorrow(${i})">فردا</button>`:''}${!a.done?`<button class="mini" onclick="openAssignDialog('${t.id}','${a.id}')">واگذاری</button>`:''}<button class="mini" onclick="toggleEditDone(${i})">${a.done?'بازگردانی':'انجام شد'}</button><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
+function renderEditActions(){const t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;$('#editActions').innerHTML=t.actions.map((a,i)=>`<div class="step-row weighted-step ${a.done?'done':''}"><span class="step-num">${a.done?'✓':i+1}</span><input value="${esc(a.text)}" oninput="editActionTextChange(${i},this.value)"><label class="weight-field">واحد <input class="numeric-input" type="text" inputmode="numeric" pattern="[0-9۰-۹٠-٩]*" value="${actionWeight(a)}" onchange="editActionWeightChange(${i},this.value)"></label><div class="step-tools"><button class="mini" onclick="moveEditAction(${i},-1)">↑</button><button class="mini" onclick="moveEditAction(${i},1)">↓</button><button class="mini" onclick="removeEditAction(${i})">حذف</button></div></div>`).join('');}
 window.editActionTextChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].text=v};
-window.editActionWeightChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].weight=Math.max(1,Math.min(20,Number(v)||1));};
+window.editActionWeightChange=(i,v)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(t)t.actions[i].weight=Math.max(1,Math.min(20,parseLocalizedNumber(v)||1));};
 window.toggleEditDone=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];a.done=!a.done;a.status=a.done?'done':'backlog';a.scheduledAt='';a.plannedFor='';if(a.done){a.assignedTo='';a.assignedAt='';}renderEditActions()};
 window.moveEditActionToday=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];if(scheduleAction(t,a,'today',todayKey()))renderEditActions()};
 window.moveEditActionTomorrow=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;let a=t.actions[i];if(scheduleAction(t,a,'tomorrow',tomorrowKey()))renderEditActions()};
@@ -458,6 +471,7 @@ window.moveEditAction=(i,d)=>{let t=state.tasks.find(x=>x.id===editingTaskId);if
 window.removeEditAction=i=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.actions.splice(i,1);renderEditActions()};
 $('#addEditAction').onclick=()=>{let v=$('#editActionText').value.trim(),t=state.tasks.find(x=>x.id===editingTaskId);if(!v||!t)return;t.actions.push({id:uid(),text:v,done:false,status:'backlog',scheduledAt:'',plannedFor:'',weight:1,assignedTo:'',assignedAt:''});$('#editActionText').value='';renderEditActions()};
 $('#saveProject').onclick=()=>{let t=state.tasks.find(x=>x.id===editingTaskId);if(!t)return;t.title=$('#editTitle').value.trim()||t.title;t.category=$('#editCategory').value;t.priority=$('#editPriority').value;t.due=$('#editDue').value;t.note=$('#editNote').value.trim();t.actions=t.actions.filter(a=>a.text.trim()).map(a=>({...a,text:a.text.trim()}));t.updated=now();save();$('#projectDialog').close();editingTaskId=null;render();toast('تغییرات ذخیره شد')};
+$('#closeProject').onclick=()=>{$('#projectDialog').close();editingTaskId=null;render();};
 
 let todayPickerProjectId=null;
 function pendingActions(project){return (project.actions||[]).filter(action=>!action.done&&action.status!=='today'&&action.status!=='tomorrow'&&action.status!=='delegated');}
@@ -523,7 +537,7 @@ function renderTasks(){
   const tc=$('#todayCapacity');if(tc&&document.activeElement!==tc)tc.value=capacityFor(todayKey())||'';const tm=$('#tomorrowCapacity');if(tm&&document.activeElement!==tm)tm.value=capacityFor(tomorrowKey())||'';
 }
 $('#searchTask').oninput=renderTasks;$('#filterStatus').onchange=renderTasks;
-function saveCapacity(key,input,label){const value=Math.max(0,Math.round(Number(input.value)||0));state.capacityByDate=state.capacityByDate||{};if(value)state.capacityByDate[key]=value;else delete state.capacityByDate[key];save();renderTasks();toast(value?`ظرفیت ${label}: ${value} واحد`:`ظرفیت ${label} پاک شد`);}
+function saveCapacity(key,input,label){const value=Math.max(0,Math.round(parseLocalizedNumber(input.value)||0));state.capacityByDate=state.capacityByDate||{};if(value)state.capacityByDate[key]=value;else delete state.capacityByDate[key];save();renderTasks();toast(value?`ظرفیت ${label}: ${value} واحد`:`ظرفیت ${label} پاک شد`);}
 $('#saveTodayCapacity').onclick=()=>saveCapacity(todayKey(),$('#todayCapacity'),'امروز');
 $('#saveTomorrowCapacity').onclick=()=>saveCapacity(tomorrowKey(),$('#tomorrowCapacity'),'فردا');
 
@@ -545,7 +559,7 @@ $('#personName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDef
 window.deletePerson=id=>{const person=personById(id);if(!person)return;const open=delegatedRowsForPerson(id).filter(x=>!x.action.done);if(open.length)return alert(`ابتدا ${open.length} اقدام بازِ ${person.name} را انجام‌شده یا «برگشت به من» کن.`);if(!confirm(`${person.name} از فهرست افراد حذف شود؟`))return;state.people=state.people.filter(p=>p.id!==id);save();render();};
 function renderAssignChoices(){const box=$('#assignPeopleList');if(!box)return;const people=state.people||[];box.innerHTML=people.map(p=>`<button class="picker-project" onclick="assignActionToPerson('${p.id}')"><span><b>${esc(p.name)}</b><small>${delegatedRowsForPerson(p.id).filter(x=>!x.action.done).length} اقدام باز</small></span><span>←</span></button>`).join('');$('#assignPeopleEmpty').style.display=people.length?'none':'block';}
 window.openAssignDialog=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!project||!action||action.done)return;assignTarget={projectId,actionId};$('#assignActionTitle').textContent=action.text;renderAssignChoices();$('#assignDialog').showModal();};
-window.assignActionToPerson=personId=>{if(!assignTarget)return;const project=state.tasks.find(t=>t.id===assignTarget.projectId),action=project?.actions.find(a=>a.id===assignTarget.actionId),person=personById(personId);if(!project||!action||!person)return;action.done=false;action.status='delegated';action.assignedTo=person.id;action.assignedAt=now();action.scheduledAt='';action.plannedFor='';project.updated=now();save();$('#assignDialog').close();const assignedProjectId=assignTarget.projectId;assignTarget=null;render();if(editingTaskId===assignedProjectId)renderEditActions();toast(`اقدام به ${person.name} واگذار شد`);};
+window.assignActionToPerson=personId=>{if(!assignTarget)return;const project=state.tasks.find(t=>t.id===assignTarget.projectId),action=project?.actions.find(a=>a.id===assignTarget.actionId),person=personById(personId);if(!project||!action||!person)return;const planned=action.plannedFor||'';action.done=false;action.status='delegated';action.assignedTo=person.id;action.assignedAt=now();action.scheduledAt='';action.plannedFor=planned;project.updated=now();save();$('#assignDialog').close();const assignedProjectId=assignTarget.projectId;assignTarget=null;render();if(editingTaskId===assignedProjectId)renderEditActions();toast(`اقدام به ${person.name} واگذار شد`);};
 $('#closeAssignDialog').onclick=()=>{$('#assignDialog').close();assignTarget=null;};
 window.takeBackAction=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!action)return;action.status='backlog';action.done=false;action.assignedTo='';action.assignedAt='';action.scheduledAt='';action.plannedFor='';project.updated=now();save();render();toast('اقدام دوباره به خودت برگشت');};
 window.markDelegatedDone=(projectId,actionId)=>{const project=state.tasks.find(t=>t.id===projectId),action=project?.actions.find(a=>a.id===actionId);if(!action)return;action.done=true;action.status='done';action.scheduledAt='';action.plannedFor='';project.updated=now();save();render();toast('اقدام محول‌شده انجام‌شده ثبت شد');};
@@ -597,6 +611,14 @@ function updateBackupPanel(){
 }
 $('#testStorage').onclick=async()=>{const ok=await testStorage();toast(ok?'ذخیره‌سازی سالم است':'آزمایش ذخیره‌سازی ناموفق بود')};
 $('#restoreEmergency').onclick=restoreLatestEmergency;
+document.addEventListener('input',e=>{if(e.target?.classList?.contains('numeric-input'))normalizeNumericInput(e.target);});
+document.addEventListener('keydown',e=>{
+  const input=e.target;if(!input?.classList?.contains('numeric-input')||e.key!=='Enter')return;
+  e.preventDefault();normalizeNumericInput(input);input.dispatchEvent(new Event('change',{bubbles:true}));
+  if(input.id==='todayCapacity')$('#saveTodayCapacity')?.click();else if(input.id==='tomorrowCapacity')$('#saveTomorrowCapacity')?.click();
+  input.blur();
+});
+
 function healthResult(name,ok,detail=''){return {name,ok:Boolean(ok),detail:String(detail||'')}}
 async function runHealthSuite(){
   const panel=$('#healthSuitePanel'),summary=$('#healthSuiteSummary'),resultsBox=$('#healthSuiteResults'),meta=$('#healthSuiteMeta');
@@ -629,6 +651,8 @@ async function runHealthSuite(){
     results.push(healthResult('واگذاری و پیگیری اقدام',ha.status==='delegated'&&ha.assignedTo===hp.id&&!ha.done,'اقدام به فرد متصل و در وضعیت واگذار‌شده قرار گرفت.'));
     const weighted={id:'w',text:'کار وزنی',weight:4,done:false,status:'backlog',plannedFor:''};results.push(healthResult('وزن اقدام',actionWeight(weighted)===4,'وزن هر اقدام مستقل ذخیره و خوانده شد.'));
     const capState=state.capacityByDate;const existingUsed=usedCapacity(todayKey(),weighted.id);const testLimit=existingUsed+4;state.capacityByDate={...capState,[todayKey()]:testLimit};const capCheck=capacityCheck(weighted,todayKey());results.push(healthResult('ظرفیت روزانه',capCheck.limit===testLimit&&capCheck.weight===4&&capCheck.ok,'کنترل سقف واحد روز فعال است.'));state.capacityByDate=capState;
+    const digitOk=parseLocalizedNumber('۱۲')===12&&parseLocalizedNumber('١٥')===15;results.push(healthResult('ورودی عدد فارسی',digitOk,'اعداد فارسی و عربی به عدد استاندارد تبدیل می‌شوند.'));
+    const plannedDone={id:'cap-done',text:'کار انجام‌شده امروز',weight:3,done:true,status:'done',plannedFor:todayKey()};const plannedDelegated={id:'cap-delegated',text:'کار واگذارشده امروز',weight:2,done:false,status:'delegated',plannedFor:todayKey(),assignedTo:'x',assignedAt:now()};const capProbe={id:'cap-project',title:'probe',actions:[plannedDone,plannedDelegated]};const oldTasks=state.tasks;state.tasks=[...oldTasks,capProbe];const retained=usedCapacity(todayKey())>=5;state.tasks=oldTasks;results.push(healthResult('حفظ مصرف ظرفیت پس از انجام/واگذاری',retained,'کار برنامه‌ریزی‌شده پس از انجام یا واگذاری همچنان از ظرفیت همان روز مصرف می‌کند.'));
     const tomorrowDate=tomorrowKey();results.push(healthResult('برنامه فردا',Boolean(tomorrowDate&&tomorrowDate!==todayKey()),'روز فردا مستقل از امروز برنامه‌ریزی می‌شود.'));
     results.push(healthResult('تاریخ و ساعت شمسی',persianDateTime(new Date(),true).length>5,'نمایش تاریخ و ساعت با تقویم شمسی فعال است.'));
     const payload={app:'Araz Flow',appVersion:APP_VERSION,schemaVersion:DB_SCHEMA_VERSION,exportedAt:new Date().toISOString(),data:original};
