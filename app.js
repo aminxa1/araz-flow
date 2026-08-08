@@ -9,7 +9,7 @@ const DB_SNAPSHOT_KEY='snapshot:last';
 const DB_PREVIOUS_SNAPSHOT_KEY='snapshot:previous';
 const DB_SCHEMA_VERSION=9;
 const APP_VERSION='2.1.0';
-const APP_BUILD='003';
+const APP_BUILD='004';
 const VERSION_ENDPOINT='./version.json';
 const defaultState={schemaVersion:DB_SCHEMA_VERSION,tasks:[],people:[],incoming:[],parking:[],notes:{},capacityByDate:{},meta:{createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),revision:0}};
 let saveQueue=Promise.resolve();
@@ -200,7 +200,7 @@ function normalize(){
   state.meta.createdAt=state.meta.createdAt||new Date().toISOString();
   state.meta.revision=Number(state.meta.revision)||0;
   state.schemaVersion=DB_SCHEMA_VERSION;
-  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 003'});
+  save({forceSnapshot:true,reason:'مهاجرت یا راه‌اندازی Version 2.1.0 Build 004'});
 }
 function save(options={}){
   if(!state)return Promise.resolve();
@@ -404,13 +404,44 @@ async function applyAvailableUpdate(){
   base.searchParams.set('refresh',String(Date.now()));
   location.replace(base.href);
 }
+async function repairMixedVersion(htmlBuild){
+  const guardKey=`arazFlowRepair-${APP_VERSION}-${APP_BUILD}`;
+  try{
+    const info=await fetch(`${VERSION_ENDPOINT}?repair=${Date.now()}`,{cache:'no-store',headers:{'Cache-Control':'no-cache'}}).then(r=>r.ok?r.json():null);
+    const serverBuild=String(info?.build||'');
+    if(serverBuild!==APP_BUILD)return false;
+    if(sessionStorage.getItem(guardKey)==='1')return false;
+    sessionStorage.setItem(guardKey,'1');
+    diagLog('warning','ترمیم خودکار نسخه ترکیبی شروع شد',`HTML ${htmlBuild} / app.js ${APP_BUILD}`);
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r=>r.unregister()));
+      }
+      if('caches' in window){
+        const keys=await caches.keys();
+        await Promise.all(keys.filter(k=>k.startsWith('araz-flow-shell-')).map(k=>caches.delete(k)));
+      }
+    }catch(err){diagLog('warning','پاک‌سازی کش در ترمیم خودکار کامل نشد',err)}
+    const u=new URL(location.href);
+    u.searchParams.set('repairBuild',APP_BUILD);
+    u.searchParams.set('t',Date.now().toString());
+    location.replace(u.href);
+    return true;
+  }catch(err){
+    diagLog('warning','ترمیم خودکار نسخه ترکیبی انجام نشد',err);
+    return false;
+  }
+}
+
 async function initApp(){
   diagLog('info','راه‌اندازی برنامه شروع شد');
   const htmlBuild=String(window.__ARAZ_HTML_BUILD__||document.querySelector('meta[name="araz-flow-build"]')?.content||'');
   if(htmlBuild && htmlBuild!==APP_BUILD){
     diagLog('error','نسخه ترکیبی از کش بارگذاری شده است',`HTML Build ${htmlBuild} / app.js Build ${APP_BUILD}`);
+    if(await repairMixedVersion(htmlBuild))return;
     const warning=document.getElementById('runtimeBuildMismatch');
-    if(warning){warning.style.display='block';warning.textContent=`نسخه‌های برنامه هماهنگ نیستند: HTML ${htmlBuild} / JavaScript ${APP_BUILD}. صفحه را دوباره باز کن.`;}
+    if(warning){warning.style.display='block';warning.textContent=`نسخه‌های برنامه هماهنگ نیستند: HTML ${htmlBuild} / JavaScript ${APP_BUILD}. ترمیم خودکار انجام نشد؛ صفحه را دوباره باز کن.`;}
   }else{
     diagLog('info','هماهنگی نسخه HTML و JavaScript',`Build ${APP_BUILD}`);
   }
@@ -718,4 +749,4 @@ if('serviceWorker' in navigator){
     .catch(err=>diagLog('warning','ثبت Service Worker ناموفق بود',err));
 }
 }
-initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 002 نگاه کن.');});
+initApp().catch(err=>{diagLog('error','راه‌اندازی برنامه متوقف شد',err);console.error(err);alert('راه‌اندازی برنامه با خطا روبه‌رو شد. به تب پشتیبان‌گیری و بخش عیب‌یابی 2.1.0 • Build 004 نگاه کن.');});

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 — Build 004
+- Fixed stale HTML build meta that incorrectly remained on Build 002 in Build 003.
+- Added automatic mixed-version recovery: clear Araz Flow caches, unregister service workers, and controlled reload.
+- Added a one-time repair guard to avoid reload loops.
+- Preserved all Build 003 product fixes and Schema 9.
+
 ## 2.1.0 — Build 003
 - Show project context on Today/Tomorrow action cards.
 - Keep planned action weight counted after completion or delegation.
